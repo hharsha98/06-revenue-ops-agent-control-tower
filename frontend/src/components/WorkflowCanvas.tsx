@@ -1,11 +1,20 @@
-import { Bot, BrainCircuit, CheckCircle2, Github, Mail, MessageSquare, ShieldCheck } from "lucide-react";
+import {
+  Bot,
+  BrainCircuit,
+  CheckCircle2,
+  Database,
+  Github,
+  Mail,
+  MessageSquare,
+  ShieldCheck,
+  Sparkles
+} from "lucide-react";
 
 const agents = [
-  { name: "Supervisor", icon: BrainCircuit, status: "routing", x: 46, y: 12 },
-  { name: "Research", icon: Bot, status: "account context", x: 8, y: 40 },
-  { name: "Knowledge", icon: Bot, status: "RAG citations", x: 32, y: 52 },
-  { name: "Ticket Triage", icon: Bot, status: "urgency + owner", x: 58, y: 52 },
-  { name: "Risk Guard", icon: ShieldCheck, status: "policy gate", x: 82, y: 40 }
+  { name: "Research", icon: Bot, status: "account context", signal: "lead fit 86%" },
+  { name: "Knowledge", icon: Database, status: "RAG citations", signal: "3 sources" },
+  { name: "Ticket Triage", icon: Bot, status: "urgency + owner", signal: "high priority" },
+  { name: "Risk Guard", icon: ShieldCheck, status: "policy gate", signal: "safe to draft" }
 ];
 
 const tools = [
@@ -19,26 +28,52 @@ export function WorkflowCanvas() {
   return (
     <section className="canvas" aria-label="Workflow canvas">
       <div className="canvas__header">
-        <span>Live workflow canvas</span>
-        <strong>Sandbox autonomy active</strong>
+        <span>Workflow control plane</span>
+        <strong>Sandbox autonomy</strong>
       </div>
-      <div className="canvas__stage">
-        <svg className="canvas__lines" viewBox="0 0 100 72" role="img" aria-label="Agent routing paths">
-          <path d="M50 22 C32 28 22 33 16 42" />
-          <path d="M50 22 C42 34 39 42 38 54" />
-          <path d="M50 22 C58 34 64 42 66 54" />
-          <path d="M50 22 C70 28 80 33 88 42" />
-        </svg>
-        {agents.map((agent) => {
-          const Icon = agent.icon;
-          return (
-            <div className="agent-node" key={agent.name} style={{ left: `${agent.x}%`, top: `${agent.y}%` }}>
-              <Icon size={18} />
-              <strong>{agent.name}</strong>
-              <span>{agent.status}</span>
-            </div>
-          );
-        })}
+      <div className="canvas__body">
+        <div className="supervisor-card">
+          <div>
+            <BrainCircuit size={22} />
+            <span>SupervisorAgent</span>
+          </div>
+          <strong>Plans, delegates, checks risk, then approves tool execution.</strong>
+        </div>
+
+        <div className="flow-strip" aria-label="Workflow stages">
+          {["intake", "plan", "delegate", "verify", "act"].map((stage) => (
+            <span key={stage}>{stage}</span>
+          ))}
+        </div>
+
+        <div className="agent-grid">
+          {agents.map((agent) => {
+            const Icon = agent.icon;
+            return (
+              <article className="agent-card" key={agent.name}>
+                <div className="agent-card__icon">
+                  <Icon size={17} />
+                </div>
+                <div>
+                  <strong>{agent.name}</strong>
+                  <span>{agent.status}</span>
+                </div>
+                <small>{agent.signal}</small>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="gate-row">
+          <div className="gate-card">
+            <ShieldCheck size={18} />
+            <span>Allowlist + audit log</span>
+          </div>
+          <div className="gate-card">
+            <Sparkles size={18} />
+            <span>LLM eval gate</span>
+          </div>
+        </div>
       </div>
       <div className="tool-rail">
         {tools.map((tool) => {
@@ -55,4 +90,3 @@ export function WorkflowCanvas() {
     </section>
   );
 }
-

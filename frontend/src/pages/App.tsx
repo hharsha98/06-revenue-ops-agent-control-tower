@@ -8,6 +8,8 @@ const metrics = [
   ["unsafe actions blocked", "12"]
 ];
 
+const proofPoints = ["LangGraph", "FastAPI", "pgvector", "Celery", "EKS/Terraform"];
+
 const tasks = [
   ["urgent", "SSO failure from enterprise trial", "TicketTriageAgent"],
   ["high", "Draft pricing follow-up for Acme AI", "OutreachAgent"],
@@ -32,12 +34,17 @@ export function App() {
         <div className="hero__grid">
           <div className="hero__copy">
             <p className="eyebrow">multi-agent AI platform for startup operators</p>
-            <h1>One supervisor agent coordinates sales, support, and engineering handoffs.</h1>
+            <h1>Revenue and support ops, run by governed AI agents.</h1>
             <p className="lede">
               Research leads, answer customer questions from company knowledge, triage tickets, send
               Gmail updates, escalate to Slack, and create GitHub issues with audit trails, evals, and
               deployment proof.
             </p>
+            <div className="proof-strip" aria-label="Technology proof points">
+              {proofPoints.map((point) => (
+                <span key={point}>{point}</span>
+              ))}
+            </div>
             <div className="actions">
               <button type="button">
                 Run sandbox workflow <ArrowRight size={16} />
@@ -101,4 +108,3 @@ export function App() {
     </main>
   );
 }
-
