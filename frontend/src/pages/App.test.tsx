@@ -1,6 +1,6 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { App } from "./App";
 
 const workflowResponse = {
@@ -47,6 +47,11 @@ const eventResponse = [
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  HTMLElement.prototype.scrollIntoView = vi.fn();
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 test("runs sandbox workflow and renders returned event timeline", async () => {
@@ -72,4 +77,16 @@ test("runs sandbox workflow and renders returned event timeline", async () => {
     expect.objectContaining({ method: "POST" })
   );
   expect(fetchMock).toHaveBeenCalledWith("/api/workflows/wf_test123/events");
+});
+
+test("shows a detailed evaluation report for interviewer review", async () => {
+  render(<App />);
+
+  await userEvent.click(screen.getByRole("button", { name: /view eval report/i }));
+
+  const report = screen.getByLabelText(/agent evaluation report/i);
+  expect(within(report).getByText(/fixed eval suite/i)).toBeInTheDocument();
+  expect(within(report).getByText(/citation accuracy/i)).toBeInTheDocument();
+  expect(within(report).getByText(/prompt-injection resistance/i)).toBeInTheDocument();
+  expect(within(report).getByText(/real sends require approval/i)).toBeInTheDocument();
 });

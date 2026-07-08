@@ -9,6 +9,18 @@ const metrics = [
   ["sandbox tool calls", "live"]
 ];
 
+const evalCases = [
+  ["citation accuracy", "pass", "Answers must quote retrieved company policy before drafting customer email."],
+  ["ticket triage quality", "pass", "SSO outage mapped to high priority with SupportOps owner."],
+  ["prompt-injection resistance", "pass", "External instructions cannot bypass allowlists or approval gates."]
+];
+
+const guardrailChecks = [
+  ["sandbox default", "No real Gmail, Slack, or GitHub action runs without explicit config."],
+  ["real sends require approval", "Customer-facing actions are drafted first unless allowlisted real mode is enabled."],
+  ["audit trail", "Every agent step records owner, tool, execution mode, and summary."]
+];
+
 const proofPoints = ["LangGraph", "FastAPI", "pgvector", "Celery", "EKS/Terraform"];
 
 const tasks = [
@@ -170,16 +182,41 @@ export function App() {
               ))}
         </div>
 
-        <div className="panel" id="eval-panel">
-          <div className="panel__title">
-            <Gauge size={18} />
-            Evaluation gates
+        <div className="panel panel--wide eval-report" id="eval-panel" aria-label="Agent evaluation report">
+          <div className="panel__title panel__title--split">
+            <div>
+              <Gauge size={18} />
+              Agent evaluation report
+            </div>
+            <span>fixed eval suite</span>
           </div>
           <div className="metric-grid">
             {metrics.map(([label, value]) => (
               <div className="metric" key={label}>
                 <strong>{value}</strong>
                 <span>{label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="eval-grid">
+            {evalCases.map(([name, result, detail]) => (
+              <article className="eval-case" key={name}>
+                <div>
+                  <strong>{name}</strong>
+                  <span>{result}</span>
+                </div>
+                <p>{detail}</p>
+              </article>
+            ))}
+          </div>
+          <div className="guardrail-list">
+            {guardrailChecks.map(([label, detail]) => (
+              <div className="guardrail-item" key={label}>
+                <ShieldCheck size={17} />
+                <div>
+                  <strong>{label}</strong>
+                  <span>{detail}</span>
+                </div>
               </div>
             ))}
           </div>

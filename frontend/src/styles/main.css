@@ -428,6 +428,35 @@ h1 {
   margin-bottom: 1rem;
 }
 
+.panel__title--split {
+  justify-content: space-between;
+}
+
+.panel__title--split > div {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.panel__title--split > span {
+  border: 1px solid rgba(45, 212, 191, 0.24);
+  border-radius: 999px;
+  color: #99f6e4;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  padding: 0.35rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.eval-report {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(8, 47, 73, 0.28), rgba(8, 12, 18, 0.84));
+  background-size: 32px 32px, 32px 32px, auto;
+}
+
 .timeline-row {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: #cbd5e1;
@@ -511,6 +540,85 @@ h1 {
   color: #dffcf4;
 }
 
+.eval-grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.9rem;
+}
+
+.eval-case {
+  background: rgba(4, 9, 14, 0.72);
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.eval-case > div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eval-case strong,
+.guardrail-item strong {
+  color: #f8fafc;
+  text-transform: capitalize;
+}
+
+.eval-case span {
+  background: rgba(132, 204, 22, 0.13);
+  border: 1px solid rgba(132, 204, 22, 0.32);
+  border-radius: 999px;
+  color: #d9f99d;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  padding: 0.32rem 0.48rem;
+  text-transform: uppercase;
+}
+
+.eval-case p {
+  color: #b6bfcb;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.guardrail-list {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.8rem;
+}
+
+.guardrail-item {
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.9rem;
+}
+
+.guardrail-item svg {
+  color: #67e8f9;
+  flex: 0 0 auto;
+}
+
+.guardrail-item div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.guardrail-item span {
+  color: #9ca3af;
+  line-height: 1.45;
+}
+
 .task-card {
   display: grid;
   gap: 0.55rem;
@@ -540,6 +648,8 @@ h1 {
 
   .tool-rail,
   .metric-grid,
+  .eval-grid,
+  .guardrail-list,
   .knowledge-grid,
   .kanban {
     grid-template-columns: 1fr 1fr;
@@ -559,9 +669,16 @@ h1 {
   .gate-row,
   .flow-strip,
   .metric-grid,
+  .eval-grid,
+  .guardrail-list,
   .knowledge-grid,
   .kanban {
     grid-template-columns: 1fr;
+  }
+
+  .panel__title--split {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .canvas {
