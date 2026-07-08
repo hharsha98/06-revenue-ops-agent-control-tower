@@ -85,6 +85,10 @@ test("runs sandbox workflow and renders returned event timeline", async () => {
   expect(within(canvas).getByText(/Canvas synced to wf_test123/i)).toBeInTheDocument();
   expect(within(canvas).getByText(/Outreach/i)).toBeInTheDocument();
   expect(within(canvas).getByText(/send_gmail · simulated/i)).toBeInTheDocument();
+  const auditPanel = screen.getByLabelText(/governance audit trail/i);
+  expect(within(auditPanel).getByText(/OutreachAgent/i)).toBeInTheDocument();
+  expect(within(auditPanel).getByText(/send_gmail/i)).toBeInTheDocument();
+  expect(within(auditPanel).getByText(/sandbox approved/i)).toBeInTheDocument();
   expect(fetchMock).toHaveBeenCalledWith(
     "/api/workflows/run",
     expect.objectContaining({ method: "POST" })

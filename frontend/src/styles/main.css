@@ -482,6 +482,14 @@ h1 {
   background-size: 32px 32px, 32px 32px, auto;
 }
 
+.governance-panel {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(12, 74, 110, 0.2), rgba(8, 12, 18, 0.86));
+  background-size: 32px 32px, 32px 32px, auto;
+}
+
 .timeline-row {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: #cbd5e1;
@@ -723,6 +731,77 @@ h1 {
   line-height: 1.45;
 }
 
+.audit-table {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.audit-table__head,
+.audit-row {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.audit-table__head {
+  color: #99f6e4;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  padding: 0 0.85rem;
+  text-transform: uppercase;
+}
+
+.audit-row,
+.audit-empty {
+  background: rgba(4, 9, 14, 0.76);
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  border-radius: 8px;
+  padding: 0.9rem;
+}
+
+.audit-row {
+  align-items: center;
+}
+
+.audit-row strong {
+  color: #f8fafc;
+}
+
+.audit-row span {
+  color: #cbd5e1;
+}
+
+.audit-row em {
+  background: rgba(132, 204, 22, 0.13);
+  border: 1px solid rgba(132, 204, 22, 0.32);
+  border-radius: 999px;
+  color: #d9f99d;
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 850;
+  justify-self: start;
+  padding: 0.35rem 0.5rem;
+}
+
+.audit-row small {
+  color: #9ca3af;
+  grid-column: 1 / -1;
+  line-height: 1.45;
+}
+
+.audit-empty {
+  align-items: center;
+  color: #b6bfcb;
+  display: flex;
+  gap: 0.65rem;
+}
+
+.audit-empty svg {
+  color: #67e8f9;
+  flex: 0 0 auto;
+}
+
 .task-card {
   display: grid;
   gap: 0.55rem;
@@ -787,6 +866,14 @@ h1 {
   .panel__title--split {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .audit-table__head {
+    display: none;
+  }
+
+  .audit-row {
+    grid-template-columns: 1fr;
   }
 
   .retrieval-card > div {

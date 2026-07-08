@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, ArrowRight, Database, FileSearch, Gauge, ServerCog, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, Database, FileSearch, Gauge, ServerCog, ShieldCheck, SquareCheck } from "lucide-react";
 import { WorkflowCanvas } from "../components/WorkflowCanvas";
 
 const metrics = [
@@ -63,6 +63,8 @@ type AgentEvent = {
   tools: string[];
   tool_calls: Array<{
     tool_name: string;
+    mode?: string;
+    allowed?: boolean;
     execution_mode: string;
     summary: string;
   }>;
@@ -85,6 +87,16 @@ export function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [knowledgeError, setKnowledgeError] = useState<string | null>(null);
+  const auditRows = events.flatMap((event) =>
+    event.tool_calls.map((call) => ({
+      agent: event.agent,
+      tool: call.tool_name,
+      mode: call.mode ?? "sandbox",
+      decision: call.allowed === false ? "blocked" : "sandbox approved",
+      execution: call.execution_mode,
+      summary: call.summary
+    }))
+  );
 
   async function runSandboxWorkflow() {
     setIsRunning(true);
@@ -318,6 +330,40 @@ export function App() {
                 <strong>{value}</strong>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="panel panel--wide governance-panel" aria-label="Governance audit trail">
+          <div className="panel__title panel__title--split">
+            <div>
+              <ShieldCheck size={18} />
+              Governance audit trail
+            </div>
+            <span>policy evidence</span>
+          </div>
+          <div className="audit-table">
+            <div className="audit-table__head">
+              <span>agent</span>
+              <span>tool</span>
+              <span>mode</span>
+              <span>decision</span>
+            </div>
+            {auditRows.length === 0 ? (
+              <div className="audit-empty">
+                <SquareCheck size={18} />
+                <span>Run the sandbox workflow to record tool approvals and policy decisions.</span>
+              </div>
+            ) : (
+              auditRows.map((row) => (
+                <article className="audit-row" key={`${row.agent}-${row.tool}-${row.summary}`}>
+                  <strong>{row.agent}</strong>
+                  <span>{row.tool}</span>
+                  <span>{row.mode} · {row.execution}</span>
+                  <em>{row.decision}</em>
+                  <small>{row.summary}</small>
+                </article>
+              ))
+            )}
           </div>
         </div>
 
