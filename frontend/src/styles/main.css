@@ -35,6 +35,11 @@ button {
   padding: 0.75rem 1rem;
 }
 
+button:disabled {
+  cursor: progress;
+  opacity: 0.78;
+}
+
 .hero {
   min-height: 720px;
   padding: 1.5rem clamp(1rem, 3vw, 3rem) 3rem;
@@ -148,6 +153,18 @@ h1 {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.13);
   color: #e5e7eb;
+}
+
+.run-status {
+  color: #a7f3d0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  min-height: 1.5rem;
+  padding-top: 0.85rem;
+}
+
+.run-status__error {
+  color: #fca5a5;
 }
 
 .canvas,
@@ -359,6 +376,32 @@ h1 {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: #cbd5e1;
   min-height: 48px;
+}
+
+.timeline-row--rich {
+  align-items: flex-start;
+  padding: 0.85rem 0;
+}
+
+.timeline-row--rich > div {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.timeline-row--rich strong {
+  color: #f8fafc;
+}
+
+.timeline-row--rich small,
+.timeline-row--rich em {
+  color: #9ca3af;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.timeline-row--rich em {
+  color: #bef264;
+  font-size: 0.84rem;
 }
 
 .timeline-row span {

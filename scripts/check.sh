@@ -3,5 +3,4 @@ set -euo pipefail
 
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/ruff check backend
-(cd frontend && npm run lint && npm run build)
-
+(cd frontend && npm run test && npm run lint && npm run build)

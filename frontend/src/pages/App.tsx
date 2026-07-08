@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Activity, ArrowRight, Database, Gauge, ServerCog, ShieldCheck } from "lucide-react";
 import { WorkflowCanvas } from "../components/WorkflowCanvas";
 
@@ -38,7 +39,63 @@ const timelineEvents = [
   "OutreachAgent prepared Gmail action"
 ];
 
+type WorkflowRun = {
+  workflow_id: string;
+  status: string;
+};
+
+type AgentEvent = {
+  sequence: number;
+  agent: string;
+  message: string;
+  tools: string[];
+  tool_calls: Array<{
+    tool_name: string;
+    execution_mode: string;
+    summary: string;
+  }>;
+};
+
 export function App() {
+  const [workflow, setWorkflow] = useState<WorkflowRun | null>(null);
+  const [events, setEvents] = useState<AgentEvent[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function runSandboxWorkflow() {
+    setIsRunning(true);
+    setError(null);
+    try {
+      const runResponse = await fetch("/api/workflows/run", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          objective: "Customer says SSO fails before security review. Answer from docs and escalate if needed.",
+          source: "gmail",
+          autonomy_mode: "sandbox"
+        })
+      });
+      if (!runResponse.ok) {
+        throw new Error("Workflow API returned an error.");
+      }
+      const run = (await runResponse.json()) as WorkflowRun;
+      const eventsResponse = await fetch(`/api/workflows/${run.workflow_id}/events`);
+      if (!eventsResponse.ok) {
+        throw new Error("Workflow events API returned an error.");
+      }
+      setWorkflow(run);
+      setEvents((await eventsResponse.json()) as AgentEvent[]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Workflow failed.");
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
+  function showEvalPanel() {
+    document.getElementById("eval-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <main>
       <section className="hero">
@@ -68,12 +125,16 @@ export function App() {
               ))}
             </div>
             <div className="actions">
-              <button type="button">
-                Run sandbox workflow <ArrowRight size={16} />
+              <button type="button" onClick={runSandboxWorkflow} disabled={isRunning}>
+                {isRunning ? "Running workflow..." : "Run sandbox workflow"} <ArrowRight size={16} />
               </button>
-              <button type="button" className="secondary">
+              <button type="button" className="secondary" onClick={showEvalPanel}>
                 View eval report
               </button>
+            </div>
+            <div className="run-status" aria-live="polite">
+              {workflow && <span>Workflow {workflow.workflow_id} {workflow.status}</span>}
+              {error && <span className="run-status__error">{error}</span>}
             </div>
           </div>
           <WorkflowCanvas />
@@ -86,15 +147,30 @@ export function App() {
             <Activity size={18} />
             Live agent timeline
           </div>
-          {timelineEvents.map((event) => (
-            <div className="timeline-row" key={event}>
-              <span />
-              {event}
-            </div>
-          ))}
+          {events.length === 0
+            ? timelineEvents.map((event) => (
+                <div className="timeline-row" key={event}>
+                  <span />
+                  {event}
+                </div>
+              ))
+            : events.map((event) => (
+                <div className="timeline-row timeline-row--rich" key={`${event.sequence}-${event.agent}`}>
+                  <span />
+                  <div>
+                    <strong>{event.agent}</strong>
+                    <small>{event.message}</small>
+                    {event.tool_calls.map((call) => (
+                      <em key={`${event.sequence}-${call.tool_name}`}>
+                        {call.tool_name} · {call.execution_mode} · {call.summary}
+                      </em>
+                    ))}
+                  </div>
+                </div>
+              ))}
         </div>
 
-        <div className="panel">
+        <div className="panel" id="eval-panel">
           <div className="panel__title">
             <Gauge size={18} />
             Evaluation gates
