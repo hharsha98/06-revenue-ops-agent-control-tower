@@ -25,6 +25,16 @@ What this proves for AI Engineer / Agent Engineer interviews:
 - safety-first autonomy with approvals and audit logs
 - backend API contracts, frontend product UX, tests, Docker, CI/CD, and cloud deployment readiness
 
+## Screenshots
+
+Live workflow canvas after a sandbox run:
+
+![RevenueOps workflow canvas](docs/assets/revenueops-workflow-canvas.png)
+
+Knowledge retrieval and governance proof:
+
+![RevenueOps RAG and governance panels](docs/assets/revenueops-rag-governance.png)
+
 ## Why this exists
 
 This project is designed to prove AI Engineer skills beyond a chatbot:
