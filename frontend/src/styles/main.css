@@ -369,6 +369,7 @@ h1 {
 }
 
 .metric-grid,
+.knowledge-grid,
 .kanban {
   display: grid;
   gap: 0.8rem;
@@ -376,6 +377,7 @@ h1 {
 }
 
 .metric,
+.knowledge-item,
 .task-card {
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -389,8 +391,25 @@ h1 {
 }
 
 .metric span,
+.knowledge-item span,
 .task-card small {
   color: #9ca3af;
+}
+
+.knowledge-item {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.knowledge-item span {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.knowledge-item strong {
+  color: #dffcf4;
 }
 
 .task-card {
@@ -422,6 +441,7 @@ h1 {
 
   .tool-rail,
   .metric-grid,
+  .knowledge-grid,
   .kanban {
     grid-template-columns: 1fr 1fr;
   }
@@ -440,6 +460,7 @@ h1 {
   .gate-row,
   .flow-strip,
   .metric-grid,
+  .knowledge-grid,
   .kanban {
     grid-template-columns: 1fr;
   }

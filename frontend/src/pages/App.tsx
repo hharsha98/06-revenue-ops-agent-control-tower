@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, Gauge, ServerCog, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, Database, Gauge, ServerCog, ShieldCheck } from "lucide-react";
 import { WorkflowCanvas } from "../components/WorkflowCanvas";
 
 const metrics = [
@@ -14,6 +14,13 @@ const tasks = [
   ["urgent", "SSO failure from enterprise trial", "TicketTriageAgent"],
   ["high", "Draft pricing follow-up for Acme AI", "OutreachAgent"],
   ["medium", "Create stale-doc issue for onboarding guide", "EngineeringHandoffAgent"]
+];
+
+const knowledgeItems = [
+  ["seeded doc", "security-sso.md"],
+  ["chunking", "700 chars + overlap"],
+  ["retrieval", "keyword baseline"],
+  ["agent tool", "MCP retrieve_docs"]
 ];
 
 export function App() {
@@ -84,6 +91,21 @@ export function App() {
               <div className="metric" key={label}>
                 <strong>{value}</strong>
                 <span>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="panel panel--wide">
+          <div className="panel__title">
+            <Database size={18} />
+            Knowledge base pipeline
+          </div>
+          <div className="knowledge-grid">
+            {knowledgeItems.map(([label, value]) => (
+              <div className="knowledge-item" key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
               </div>
             ))}
           </div>

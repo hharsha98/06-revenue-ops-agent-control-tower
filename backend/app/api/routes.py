@@ -1,7 +1,14 @@
 from fastapi import APIRouter
 
 from backend.app.agents.supervisor import build_startup_revenue_plan
+from backend.app.models.knowledge import (
+    DocumentIngestResponse,
+    DocumentUploadRequest,
+    KnowledgeSearchRequest,
+    KnowledgeSearchResponse,
+)
 from backend.app.models.workflow import AuditEvent, WorkflowRequest, WorkflowRun
+from backend.app.services.knowledge import knowledge_store
 from backend.app.tools.registry import build_tool_registry
 
 router = APIRouter()
@@ -29,9 +36,18 @@ def get_workflow_events(workflow_id: str) -> list[AuditEvent]:
     ]
 
 
-@router.post("/documents/upload", response_model=dict)
-def upload_document() -> dict[str, str]:
-    return {"status": "stubbed", "next": "wire file upload to pgvector ingestion"}
+@router.post("/documents/upload", response_model=DocumentIngestResponse)
+def upload_document(request: DocumentUploadRequest) -> DocumentIngestResponse:
+    chunks = knowledge_store.ingest(request)
+    return DocumentIngestResponse(source=request.source, chunks_created=len(chunks))
+
+
+@router.post("/documents/search", response_model=KnowledgeSearchResponse)
+def search_documents(request: KnowledgeSearchRequest) -> KnowledgeSearchResponse:
+    return KnowledgeSearchResponse(
+        query=request.query,
+        results=knowledge_store.search(request.query, request.limit),
+    )
 
 
 @router.post("/evals/run", response_model=dict)
@@ -52,4 +68,3 @@ def get_audit_events() -> list[AuditEvent]:
 @router.get("/tools", response_model=dict)
 def list_tools() -> dict:
     return build_tool_registry()
-
