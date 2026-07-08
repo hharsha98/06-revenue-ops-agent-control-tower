@@ -1,14 +1,18 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
-from backend.app.agents.supervisor import build_startup_revenue_plan
 from backend.app.models.knowledge import (
     DocumentIngestResponse,
     DocumentUploadRequest,
     KnowledgeSearchRequest,
     KnowledgeSearchResponse,
 )
-from backend.app.models.workflow import AuditEvent, WorkflowRequest, WorkflowRun
+from backend.app.models.workflow import AgentEvent, AuditEvent, WorkflowRequest, WorkflowRun
 from backend.app.services.knowledge import knowledge_store
+from backend.app.services.workflow_runner import (
+    get_workflow_events,
+    get_workflow_run,
+    run_agent_workflow,
+)
 from backend.app.tools.registry import build_tool_registry
 
 router = APIRouter()
@@ -16,24 +20,23 @@ router = APIRouter()
 
 @router.post("/workflows/run", response_model=WorkflowRun)
 def run_workflow(request: WorkflowRequest) -> WorkflowRun:
-    plan = build_startup_revenue_plan(request)
-    return WorkflowRun(workflow_id=plan.workflow_id, plan=plan)
+    return run_agent_workflow(request).run
 
 
-@router.get("/workflows/{workflow_id}", response_model=dict)
-def get_workflow(workflow_id: str) -> dict[str, str]:
-    return {"workflow_id": workflow_id, "status": "planned"}
+@router.get("/workflows/{workflow_id}", response_model=WorkflowRun)
+def get_workflow(workflow_id: str) -> WorkflowRun:
+    run = get_workflow_run(workflow_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    return run
 
 
-@router.get("/workflows/{workflow_id}/events", response_model=list[AuditEvent])
-def get_workflow_events(workflow_id: str) -> list[AuditEvent]:
-    return [
-        AuditEvent(
-            workflow_id=workflow_id,
-            event_type="workflow.planned",
-            message="Supervisor created an auditable agent plan.",
-        )
-    ]
+@router.get("/workflows/{workflow_id}/events", response_model=list[AgentEvent])
+def list_workflow_events(workflow_id: str) -> list[AgentEvent]:
+    events = get_workflow_events(workflow_id)
+    if not events:
+        raise HTTPException(status_code=404, detail="Workflow events not found")
+    return events
 
 
 @router.post("/documents/upload", response_model=DocumentIngestResponse)

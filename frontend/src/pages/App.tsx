@@ -23,6 +23,14 @@ const knowledgeItems = [
   ["agent tool", "MCP retrieve_docs"]
 ];
 
+const timelineEvents = [
+  "SupervisorAgent planned specialist steps",
+  "KnowledgeAgent retrieved grounded evidence",
+  "TicketTriageAgent classified urgency",
+  "RiskGuardAgent checked safety policy",
+  "OutreachAgent prepared Gmail action"
+];
+
 export function App() {
   return (
     <main>
@@ -71,14 +79,12 @@ export function App() {
             <Activity size={18} />
             Live agent timeline
           </div>
-          {["Supervisor planned 4 steps", "KnowledgeAgent retrieved 3 citations", "RiskGuard blocked real send", "Slack escalation drafted"].map(
-            (event) => (
-              <div className="timeline-row" key={event}>
-                <span />
-                {event}
-              </div>
-            )
-          )}
+          {timelineEvents.map((event) => (
+            <div className="timeline-row" key={event}>
+              <span />
+              {event}
+            </div>
+          ))}
         </div>
 
         <div className="panel">

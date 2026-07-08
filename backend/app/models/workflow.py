@@ -33,6 +33,20 @@ class WorkflowRun(BaseModel):
     plan: WorkflowPlan
 
 
+class AgentEvent(BaseModel):
+    workflow_id: str
+    sequence: int
+    agent: str
+    event_type: Literal["workflow.planned", "agent.completed"]
+    message: str
+    tools: list[str] = Field(default_factory=list)
+
+
+class WorkflowExecutionResult(BaseModel):
+    run: WorkflowRun
+    events: list[AgentEvent]
+
+
 class ToolCall(BaseModel):
     tool_name: str
     target: str
@@ -44,4 +58,3 @@ class AuditEvent(BaseModel):
     event_type: str
     message: str
     workflow_id: str | None = None
-
