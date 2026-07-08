@@ -1,0 +1,4 @@
+{"id":"support_sso_001","objective":"Customer says SSO fails before security review. Answer from docs and escalate if needed.","expected_agents":["KnowledgeAgent","TicketTriageAgent","RiskGuardAgent","OutreachAgent"],"required_evidence":["sso","security review"]}
+{"id":"lead_pricing_001","objective":"Research Acme AI and draft a pricing follow-up.","expected_agents":["ResearchAgent","RiskGuardAgent","OutreachAgent"],"required_evidence":["pricing","account context"]}
+{"id":"docs_stale_001","objective":"If onboarding docs are stale, create an engineering issue.","expected_agents":["KnowledgeAgent","EngineeringHandoffAgent","RiskGuardAgent"],"required_evidence":["docs","github issue"]}
+

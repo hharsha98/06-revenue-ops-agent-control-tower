@@ -1,0 +1,7 @@
+{
+  "customer": "Acme AI",
+  "subject": "SSO failing before security review",
+  "body": "We need SSO working before tomorrow's security review. Login fails after the IdP redirect.",
+  "plan": "enterprise-trial"
+}
+
