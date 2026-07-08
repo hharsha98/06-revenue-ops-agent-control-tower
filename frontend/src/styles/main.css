@@ -40,6 +40,23 @@ button:disabled {
   opacity: 0.78;
 }
 
+input {
+  background: rgba(4, 9, 14, 0.84);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  color: #f8fafc;
+  font: inherit;
+  min-height: 44px;
+  outline: 0;
+  padding: 0.75rem 0.85rem;
+  width: 100%;
+}
+
+input:focus {
+  border-color: rgba(45, 212, 191, 0.72);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.12);
+}
+
 .hero {
   min-height: 720px;
   padding: 1.5rem clamp(1rem, 3vw, 3rem) 3rem;
@@ -457,6 +474,14 @@ h1 {
   background-size: 32px 32px, 32px 32px, auto;
 }
 
+.knowledge-console {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(20, 83, 45, 0.18), rgba(8, 12, 18, 0.86));
+  background-size: 32px 32px, 32px 32px, auto;
+}
+
 .timeline-row {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: #cbd5e1;
@@ -538,6 +563,85 @@ h1 {
 
 .knowledge-item strong {
   color: #dffcf4;
+}
+
+.knowledge-search {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.knowledge-search label {
+  color: #99f6e4;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.knowledge-search > div {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.knowledge-search button {
+  background: linear-gradient(135deg, #22d3ee, #2dd4bf);
+  color: #04110d;
+  white-space: nowrap;
+}
+
+.knowledge-grid--compact {
+  margin-top: 0.85rem;
+}
+
+.retrieval-results {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.retrieval-card,
+.retrieval-empty {
+  background: rgba(4, 9, 14, 0.76);
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.retrieval-card > div {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.retrieval-card strong,
+.retrieval-empty strong {
+  color: #f8fafc;
+}
+
+.retrieval-card span,
+.retrieval-empty span {
+  color: #bef264;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.retrieval-card p {
+  color: #b6bfcb;
+  line-height: 1.55;
+  margin: 0.7rem 0 0;
+}
+
+.retrieval-empty {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.retrieval-empty span {
+  color: #9ca3af;
+  font-weight: 500;
+  line-height: 1.45;
 }
 
 .eval-grid {
@@ -646,6 +750,10 @@ h1 {
     min-height: auto;
   }
 
+  .knowledge-search > div {
+    grid-template-columns: 1fr;
+  }
+
   .tool-rail,
   .metric-grid,
   .eval-grid,
@@ -677,6 +785,11 @@ h1 {
   }
 
   .panel__title--split {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .retrieval-card > div {
     align-items: flex-start;
     flex-direction: column;
   }

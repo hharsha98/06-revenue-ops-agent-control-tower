@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, ArrowRight, Database, Gauge, ServerCog, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, Database, FileSearch, Gauge, ServerCog, ShieldCheck } from "lucide-react";
 import { WorkflowCanvas } from "../components/WorkflowCanvas";
 
 const metrics = [
@@ -68,11 +68,23 @@ type AgentEvent = {
   }>;
 };
 
+type KnowledgeResult = {
+  id: string;
+  source: string;
+  chunk_index: number;
+  content: string;
+  score: number;
+};
+
 export function App() {
   const [workflow, setWorkflow] = useState<WorkflowRun | null>(null);
   const [events, setEvents] = useState<AgentEvent[]>([]);
+  const [knowledgeQuery, setKnowledgeQuery] = useState("SSO request ID escalation");
+  const [knowledgeResults, setKnowledgeResults] = useState<KnowledgeResult[]>([]);
+  const [isSearchingKnowledge, setIsSearchingKnowledge] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [knowledgeError, setKnowledgeError] = useState<string | null>(null);
 
   async function runSandboxWorkflow() {
     setIsRunning(true);
@@ -106,6 +118,27 @@ export function App() {
 
   function showEvalPanel() {
     document.getElementById("eval-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function searchKnowledge() {
+    setIsSearchingKnowledge(true);
+    setKnowledgeError(null);
+    try {
+      const response = await fetch("/api/documents/search", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query: knowledgeQuery, limit: 3 })
+      });
+      if (!response.ok) {
+        throw new Error("Knowledge search API returned an error.");
+      }
+      const body = (await response.json()) as { results: KnowledgeResult[] };
+      setKnowledgeResults(body.results);
+    } catch (caught) {
+      setKnowledgeError(caught instanceof Error ? caught.message : "Knowledge search failed.");
+    } finally {
+      setIsSearchingKnowledge(false);
+    }
   }
 
   return (
@@ -222,18 +255,54 @@ export function App() {
           </div>
         </div>
 
-        <div className="panel panel--wide">
-          <div className="panel__title">
-            <Database size={18} />
-            Knowledge base pipeline
+        <div className="panel panel--wide knowledge-console" aria-label="Knowledge RAG console">
+          <div className="panel__title panel__title--split">
+            <div>
+              <Database size={18} />
+              Knowledge RAG console
+            </div>
+            <span>grounded retrieval</span>
           </div>
-          <div className="knowledge-grid">
+          <div className="knowledge-search">
+            <label htmlFor="knowledge-query">Search company knowledge</label>
+            <div>
+              <input
+                id="knowledge-query"
+                onChange={(event) => setKnowledgeQuery(event.target.value)}
+                value={knowledgeQuery}
+              />
+              <button type="button" onClick={searchKnowledge} disabled={isSearchingKnowledge}>
+                <FileSearch size={16} />
+                {isSearchingKnowledge ? "Searching..." : "Search knowledge"}
+              </button>
+            </div>
+            {knowledgeError && <span className="run-status__error">{knowledgeError}</span>}
+          </div>
+          <div className="knowledge-grid knowledge-grid--compact">
             {knowledgeItems.map(([label, value]) => (
               <div className="knowledge-item" key={label}>
                 <span>{label}</span>
                 <strong>{value}</strong>
               </div>
             ))}
+          </div>
+          <div className="retrieval-results" aria-live="polite">
+            {knowledgeResults.length === 0 ? (
+              <article className="retrieval-empty">
+                <strong>Ready to retrieve cited evidence</strong>
+                <span>Search the seeded SSO policy to show how the KnowledgeAgent grounds customer answers.</span>
+              </article>
+            ) : (
+              knowledgeResults.map((result) => (
+                <article className="retrieval-card" key={result.id}>
+                  <div>
+                    <strong>{result.source}</strong>
+                    <span>chunk {result.chunk_index} · score {result.score}</span>
+                  </div>
+                  <p>{result.content}</p>
+                </article>
+              ))
+            )}
           </div>
         </div>
 

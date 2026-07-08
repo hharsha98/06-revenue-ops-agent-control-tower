@@ -45,6 +45,19 @@ const eventResponse = [
   }
 ];
 
+const knowledgeResponse = {
+  query: "SSO request ID escalation",
+  results: [
+    {
+      id: "security-sso.md:0",
+      source: "security-sso.md",
+      chunk_index: 0,
+      content: "SSO failures should collect request ID, IdP domain, and timestamp before escalation.",
+      score: 0.92
+    }
+  ]
+};
+
 beforeEach(() => {
   vi.restoreAllMocks();
   HTMLElement.prototype.scrollIntoView = vi.fn();
@@ -89,4 +102,24 @@ test("shows a detailed evaluation report for interviewer review", async () => {
   expect(within(report).getByText(/citation accuracy/i)).toBeInTheDocument();
   expect(within(report).getByText(/prompt-injection resistance/i)).toBeInTheDocument();
   expect(within(report).getByText(/real sends require approval/i)).toBeInTheDocument();
+});
+
+test("searches the knowledge base and renders cited evidence", async () => {
+  const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => knowledgeResponse });
+  vi.stubGlobal("fetch", fetchMock);
+
+  render(<App />);
+
+  await userEvent.click(screen.getByRole("button", { name: /search knowledge/i }));
+
+  const consolePanel = screen.getByLabelText(/knowledge rag console/i);
+  await waitFor(() => {
+    expect(within(consolePanel).getByText(/score 0.92/i)).toBeInTheDocument();
+  });
+  expect(within(consolePanel).getAllByText(/security-sso.md/i).length).toBeGreaterThan(0);
+  expect(within(consolePanel).getByText(/request ID, IdP domain/i)).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledWith(
+    "/api/documents/search",
+    expect.objectContaining({ method: "POST" })
+  );
 });
