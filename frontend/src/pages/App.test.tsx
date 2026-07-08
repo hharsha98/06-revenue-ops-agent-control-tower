@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { App } from "./App";
@@ -62,11 +62,14 @@ test("runs sandbox workflow and renders returned event timeline", async () => {
   await waitFor(() => {
     expect(screen.getByText(/workflow wf_test123 completed/i)).toBeInTheDocument();
   });
-  expect(screen.getByText(/Created sandbox Gmail draft/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/Created sandbox Gmail draft/i).length).toBeGreaterThan(0);
+  const canvas = screen.getByLabelText(/workflow canvas/i);
+  expect(within(canvas).getByText(/Canvas synced to wf_test123/i)).toBeInTheDocument();
+  expect(within(canvas).getByText(/Outreach/i)).toBeInTheDocument();
+  expect(within(canvas).getByText(/send_gmail · simulated/i)).toBeInTheDocument();
   expect(fetchMock).toHaveBeenCalledWith(
     "/api/workflows/run",
     expect.objectContaining({ method: "POST" })
   );
   expect(fetchMock).toHaveBeenCalledWith("/api/workflows/wf_test123/events");
 });
-

@@ -137,7 +137,7 @@ export function App() {
               {error && <span className="run-status__error">{error}</span>}
             </div>
           </div>
-          <WorkflowCanvas />
+          <WorkflowCanvas workflowId={workflow?.workflow_id} events={events} isRunning={isRunning} />
         </div>
       </section>
 

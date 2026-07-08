@@ -198,6 +198,7 @@ h1 {
 
 .canvas__header strong {
   color: #86efac;
+  text-align: right;
 }
 
 .canvas__body {
@@ -219,6 +220,15 @@ h1 {
   display: grid;
   gap: 0.55rem;
   padding: 1rem;
+}
+
+.supervisor-card--completed,
+.agent-card--completed {
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.16), rgba(8, 12, 18, 0.9)),
+    rgba(4, 9, 14, 0.9);
+  border-color: rgba(52, 211, 153, 0.68);
+  box-shadow: 0 0 28px rgba(45, 212, 191, 0.16);
 }
 
 .supervisor-card > div,
@@ -269,6 +279,11 @@ h1 {
   text-transform: uppercase;
 }
 
+.flow-strip__step--completed {
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.28), rgba(163, 230, 53, 0.18)) !important;
+  color: #f0fdf4 !important;
+}
+
 .agent-grid {
   display: grid;
   gap: 0.75rem;
@@ -311,6 +326,47 @@ h1 {
   color: #bef264;
   margin-left: auto;
   text-align: right;
+}
+
+.agent-card--completed .agent-card__icon {
+  background: rgba(45, 212, 191, 0.2);
+  border-color: rgba(45, 212, 191, 0.44);
+}
+
+.agent-card--completed span,
+.agent-card--completed small {
+  color: #bbf7d0;
+}
+
+.canvas-proof {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(163, 230, 53, 0.28);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.24rem;
+  grid-template-columns: 0.8fr 1fr;
+  padding: 0.85rem;
+}
+
+.canvas-proof span {
+  color: #9ca3af;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.canvas-proof strong {
+  color: #ecfccb;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.canvas-proof small {
+  color: #b6bfcb;
+  grid-column: 1 / -1;
+  line-height: 1.45;
 }
 
 .gate-row {
