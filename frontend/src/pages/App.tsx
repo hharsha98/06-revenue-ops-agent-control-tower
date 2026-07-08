@@ -5,7 +5,7 @@ const metrics = [
   ["tool-call success", "96%"],
   ["avg workflow latency", "18s"],
   ["citation coverage", "91%"],
-  ["unsafe actions blocked", "12"]
+  ["sandbox tool calls", "live"]
 ];
 
 const proofPoints = ["LangGraph", "FastAPI", "pgvector", "Celery", "EKS/Terraform"];
@@ -21,6 +21,13 @@ const knowledgeItems = [
   ["chunking", "700 chars + overlap"],
   ["retrieval", "keyword baseline"],
   ["agent tool", "MCP retrieve_docs"]
+];
+
+const toolItems = [
+  ["Gmail", "sandbox draft"],
+  ["Slack", "demo-alerts post"],
+  ["GitHub", "allowlisted issue"],
+  ["Safety", "real mode blocked"]
 ];
 
 const timelineEvents = [
@@ -109,6 +116,21 @@ export function App() {
           </div>
           <div className="knowledge-grid">
             {knowledgeItems.map(([label, value]) => (
+              <div className="knowledge-item" key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="panel panel--wide">
+          <div className="panel__title">
+            <ShieldCheck size={18} />
+            Sandbox tool execution
+          </div>
+          <div className="knowledge-grid">
+            {toolItems.map(([label, value]) => (
               <div className="knowledge-item" key={label}>
                 <span>{label}</span>
                 <strong>{value}</strong>

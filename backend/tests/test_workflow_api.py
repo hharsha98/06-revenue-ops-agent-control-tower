@@ -26,4 +26,5 @@ def test_workflow_run_api_persists_retrievable_events():
     assert events[0]["agent"] == "SupervisorAgent"
     assert events[-1]["agent"] == "OutreachAgent"
     assert events[-1]["tools"] == ["send_gmail"]
-
+    assert events[-1]["tool_calls"][0]["tool_name"] == "send_gmail"
+    assert events[-1]["tool_calls"][0]["execution_mode"] == "simulated"

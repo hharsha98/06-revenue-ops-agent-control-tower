@@ -22,4 +22,5 @@ def test_runner_executes_agent_plan_and_records_ordered_events():
     assert result.events[0].sequence == 1
     assert result.events[-1].event_type == "agent.completed"
     assert result.events[-1].tools == ["send_gmail"]
-
+    assert result.events[-1].tool_calls[0].tool_name == "send_gmail"
+    assert result.events[-1].tool_calls[0].execution_mode == "simulated"

@@ -33,6 +33,21 @@ class WorkflowRun(BaseModel):
     plan: WorkflowPlan
 
 
+class ToolCall(BaseModel):
+    tool_name: str
+    target: str
+    mode: AutonomyMode
+    allowed: bool
+    execution_mode: Literal["simulated", "approval_required", "live_blocked", "live"]
+    summary: str
+
+
+class ToolExecuteRequest(BaseModel):
+    tool_name: str
+    autonomy_mode: AutonomyMode = "sandbox"
+    payload: dict[str, str] = Field(default_factory=dict)
+
+
 class AgentEvent(BaseModel):
     workflow_id: str
     sequence: int
@@ -40,18 +55,12 @@ class AgentEvent(BaseModel):
     event_type: Literal["workflow.planned", "agent.completed"]
     message: str
     tools: list[str] = Field(default_factory=list)
+    tool_calls: list[ToolCall] = Field(default_factory=list)
 
 
 class WorkflowExecutionResult(BaseModel):
     run: WorkflowRun
     events: list[AgentEvent]
-
-
-class ToolCall(BaseModel):
-    tool_name: str
-    target: str
-    mode: AutonomyMode
-    allowed: bool
 
 
 class AuditEvent(BaseModel):

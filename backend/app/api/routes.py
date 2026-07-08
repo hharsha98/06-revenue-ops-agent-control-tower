@@ -6,13 +6,14 @@ from backend.app.models.knowledge import (
     KnowledgeSearchRequest,
     KnowledgeSearchResponse,
 )
-from backend.app.models.workflow import AgentEvent, AuditEvent, WorkflowRequest, WorkflowRun
+from backend.app.models.workflow import AgentEvent, AuditEvent, ToolCall, ToolExecuteRequest, WorkflowRequest, WorkflowRun
 from backend.app.services.knowledge import knowledge_store
 from backend.app.services.workflow_runner import (
     get_workflow_events,
     get_workflow_run,
     run_agent_workflow,
 )
+from backend.app.tools.executor import execute_tool
 from backend.app.tools.registry import build_tool_registry
 
 router = APIRouter()
@@ -71,3 +72,12 @@ def get_audit_events() -> list[AuditEvent]:
 @router.get("/tools", response_model=dict)
 def list_tools() -> dict:
     return build_tool_registry()
+
+
+@router.post("/tools/execute", response_model=ToolCall)
+def execute_registered_tool(request: ToolExecuteRequest) -> ToolCall:
+    return execute_tool(
+        tool_name=request.tool_name,
+        autonomy_mode=request.autonomy_mode,
+        payload=request.payload,
+    )
