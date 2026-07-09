@@ -1,5 +1,8 @@
 # 06 · RevenueOps Agent Control Tower
 
+[![CI](https://github.com/hharsha98/06-revenue-ops-agent-control-tower/actions/workflows/ci.yml/badge.svg)](https://github.com/hharsha98/06-revenue-ops-agent-control-tower/actions/workflows/ci.yml)
+[![Portfolio PR](https://img.shields.io/badge/review-portfolio%20PR-blue)](https://github.com/hharsha98/06-revenue-ops-agent-control-tower/pull/1)
+
 Enterprise-style multi-agent AI platform for startup founders and COOs.
 
 One supervisor agent coordinates specialist agents for sales, support, customer communication,
@@ -135,6 +138,12 @@ Portfolio branch status:
 ```
 
 This runs backend tests, Ruff linting, frontend tests, frontend linting, and production build.
+
+GitHub Actions also runs CI on pull requests:
+
+- `backend`: installs Python dependencies, runs `pytest`, and runs `ruff`.
+- `frontend`: installs Node dependencies, runs lint, tests, and production build.
+- Current review PR: <https://github.com/hharsha98/06-revenue-ops-agent-control-tower/pull/1>
 
 ## Safety default
 
