@@ -1,9 +1,42 @@
 # 06 · RevenueOps Agent Control Tower
 
+[![CI](https://github.com/hharsha98/06-revenue-ops-agent-control-tower/actions/workflows/ci.yml/badge.svg)](https://github.com/hharsha98/06-revenue-ops-agent-control-tower/actions/workflows/ci.yml)
+[![Portfolio PR](https://img.shields.io/badge/review-portfolio%20PR-blue)](https://github.com/hharsha98/06-revenue-ops-agent-control-tower/pull/1)
+
 Enterprise-style multi-agent AI platform for startup founders and COOs.
 
 One supervisor agent coordinates specialist agents for sales, support, customer communication,
 engineering handoff, risk checks, evals, and audit trails.
+
+## Portfolio demo
+
+This project is built to show production-style AI engineering, not only prompt demos.
+
+Current demo highlights:
+
+- **Live workflow canvas**: clicking `Run sandbox workflow` runs the backend workflow and updates the agent map.
+- **Agent timeline**: shows each supervisor/specialist step returned by the API.
+- **Knowledge RAG console**: searches seeded company docs and renders cited evidence chunks.
+- **Evaluation report**: shows fixed eval gates for citations, ticket triage, and prompt-injection resistance.
+- **Governance audit trail**: records tool, agent, sandbox mode, approval decision, and action summary.
+- **Sandbox tool execution**: demonstrates Gmail/Slack/GitHub-style actions without touching real accounts.
+
+What this proves for AI Engineer / Agent Engineer interviews:
+
+- agent orchestration with controlled tool use
+- grounded RAG answers with retrievable evidence
+- safety-first autonomy with approvals and audit logs
+- backend API contracts, frontend product UX, tests, Docker, CI/CD, and cloud deployment readiness
+
+## Screenshots
+
+Live workflow canvas after a sandbox run:
+
+![RevenueOps workflow canvas](docs/assets/revenueops-workflow-canvas.png)
+
+Knowledge retrieval and governance proof:
+
+![RevenueOps RAG and governance panels](docs/assets/revenueops-rag-governance.png)
 
 ## Why this exists
 
@@ -75,17 +108,42 @@ npm run dev
 
 Open `http://127.0.0.1:5177`.
 
+## What to click in the demo
+
+1. Click **Run sandbox workflow**.
+   The canvas, timeline, and governance audit trail update from backend workflow events.
+2. Click **View eval report**.
+   The page scrolls to quality gates for citations, triage, prompt-injection resistance, approvals, and auditability.
+3. In **Knowledge RAG console**, click **Search knowledge**.
+   The UI calls `/api/documents/search` and shows the retrieved source, chunk, score, and evidence text.
+
 ## Current status
 
-Phase 0 scaffold:
+Portfolio branch status:
 
 - FastAPI API contracts wired
 - supervisor routing contract
 - safety and allowlist checks
 - tool registry for Gmail, Slack, GitHub, RAG, lead scoring, and ticket triage
-- React dashboard with workflow canvas
+- React dashboard with live workflow canvas
+- Knowledge/RAG console connected to backend search
+- eval report and governance audit trail
 - Docker Compose, Kubernetes, Terraform, and CI skeletons
 - backend tests and frontend build/lint passing
+
+## Verification
+
+```bash
+./scripts/check.sh
+```
+
+This runs backend tests, Ruff linting, frontend tests, frontend linting, and production build.
+
+GitHub Actions also runs CI on pull requests:
+
+- `backend`: installs Python dependencies, runs `pytest`, and runs `ruff`.
+- `frontend`: installs Node dependencies, runs lint, tests, and production build.
+- Current review PR: <https://github.com/hharsha98/06-revenue-ops-agent-control-tower/pull/1>
 
 ## Safety default
 
@@ -94,4 +152,3 @@ Autonomy defaults to `sandbox`.
 Real-account mode exists for the final production demo, but it must require explicit `.env`
 configuration and allowlists. This is important in interviews: autonomous agents should show
 power and control, not reckless behavior.
-

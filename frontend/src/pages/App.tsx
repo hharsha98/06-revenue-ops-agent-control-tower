@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, ArrowRight, Database, Gauge, ServerCog, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, Database, FileSearch, Gauge, ServerCog, ShieldCheck, SquareCheck } from "lucide-react";
 import { WorkflowCanvas } from "../components/WorkflowCanvas";
 
 const metrics = [
@@ -7,6 +7,18 @@ const metrics = [
   ["avg workflow latency", "18s"],
   ["citation coverage", "91%"],
   ["sandbox tool calls", "live"]
+];
+
+const evalCases = [
+  ["citation accuracy", "pass", "Answers must quote retrieved company policy before drafting customer email."],
+  ["ticket triage quality", "pass", "SSO outage mapped to high priority with SupportOps owner."],
+  ["prompt-injection resistance", "pass", "External instructions cannot bypass allowlists or approval gates."]
+];
+
+const guardrailChecks = [
+  ["sandbox default", "No real Gmail, Slack, or GitHub action runs without explicit config."],
+  ["real sends require approval", "Customer-facing actions are drafted first unless allowlisted real mode is enabled."],
+  ["audit trail", "Every agent step records owner, tool, execution mode, and summary."]
 ];
 
 const proofPoints = ["LangGraph", "FastAPI", "pgvector", "Celery", "EKS/Terraform"];
@@ -51,16 +63,72 @@ type AgentEvent = {
   tools: string[];
   tool_calls: Array<{
     tool_name: string;
+    mode?: string;
+    allowed?: boolean;
     execution_mode: string;
     summary: string;
+  }>;
+};
+
+type KnowledgeResult = {
+  id: string;
+  source: string;
+  chunk_index: number;
+  content: string;
+  score: number;
+};
+
+type EvaluationReport = {
+  status: string;
+  summary: {
+    cases_passed: number;
+    cases_failed: number;
+    citation_coverage: number;
+    tool_call_success_rate: number;
+    average_latency_seconds: number;
+  };
+  cases: Array<{
+    name: string;
+    result: string;
+    detail: string;
   }>;
 };
 
 export function App() {
   const [workflow, setWorkflow] = useState<WorkflowRun | null>(null);
   const [events, setEvents] = useState<AgentEvent[]>([]);
+  const [knowledgeQuery, setKnowledgeQuery] = useState("SSO request ID escalation");
+  const [knowledgeResults, setKnowledgeResults] = useState<KnowledgeResult[]>([]);
+  const [evalReport, setEvalReport] = useState<EvaluationReport | null>(null);
+  const [isSearchingKnowledge, setIsSearchingKnowledge] = useState(false);
+  const [isRunningEvals, setIsRunningEvals] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [knowledgeError, setKnowledgeError] = useState<string | null>(null);
+  const [evalError, setEvalError] = useState<string | null>(null);
+  const auditRows = events.flatMap((event) =>
+    event.tool_calls.map((call) => ({
+      agent: event.agent,
+      tool: call.tool_name,
+      mode: call.mode ?? "sandbox",
+      decision: call.allowed === false ? "blocked" : "sandbox approved",
+      execution: call.execution_mode,
+      summary: call.summary
+    }))
+  );
+  const displayedMetrics = evalReport
+    ? [
+        ["fixed eval cases", `${evalReport.summary.cases_passed} passed`],
+        ["failed eval cases", `${evalReport.summary.cases_failed}`],
+        ["citation coverage", `${Math.round(evalReport.summary.citation_coverage * 100)}%`],
+        ["tool-call success", `${Math.round(evalReport.summary.tool_call_success_rate * 100)}%`]
+      ]
+    : metrics;
+  const displayedEvalCases = evalReport?.cases.map((testCase) => [
+    testCase.name,
+    testCase.result,
+    testCase.detail
+  ]) ?? evalCases;
 
   async function runSandboxWorkflow() {
     setIsRunning(true);
@@ -92,8 +160,42 @@ export function App() {
     }
   }
 
-  function showEvalPanel() {
+  async function showEvalPanel() {
     document.getElementById("eval-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setIsRunningEvals(true);
+    setEvalError(null);
+    try {
+      const response = await fetch("/api/evals/run", { method: "POST" });
+      if (!response.ok) {
+        throw new Error("Eval API returned an error.");
+      }
+      setEvalReport((await response.json()) as EvaluationReport);
+    } catch (caught) {
+      setEvalError(caught instanceof Error ? caught.message : "Eval run failed.");
+    } finally {
+      setIsRunningEvals(false);
+    }
+  }
+
+  async function searchKnowledge() {
+    setIsSearchingKnowledge(true);
+    setKnowledgeError(null);
+    try {
+      const response = await fetch("/api/documents/search", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query: knowledgeQuery, limit: 3 })
+      });
+      if (!response.ok) {
+        throw new Error("Knowledge search API returned an error.");
+      }
+      const body = (await response.json()) as { results: KnowledgeResult[] };
+      setKnowledgeResults(body.results);
+    } catch (caught) {
+      setKnowledgeError(caught instanceof Error ? caught.message : "Knowledge search failed.");
+    } finally {
+      setIsSearchingKnowledge(false);
+    }
   }
 
   return (
@@ -129,7 +231,7 @@ export function App() {
                 {isRunning ? "Running workflow..." : "Run sandbox workflow"} <ArrowRight size={16} />
               </button>
               <button type="button" className="secondary" onClick={showEvalPanel}>
-                View eval report
+                {isRunningEvals ? "Running evals..." : "View eval report"}
               </button>
             </div>
             <div className="run-status" aria-live="polite">
@@ -137,7 +239,7 @@ export function App() {
               {error && <span className="run-status__error">{error}</span>}
             </div>
           </div>
-          <WorkflowCanvas />
+          <WorkflowCanvas workflowId={workflow?.workflow_id} events={events} isRunning={isRunning} />
         </div>
       </section>
 
@@ -170,33 +272,95 @@ export function App() {
               ))}
         </div>
 
-        <div className="panel" id="eval-panel">
-          <div className="panel__title">
-            <Gauge size={18} />
-            Evaluation gates
+        <div className="panel panel--wide eval-report" id="eval-panel" aria-label="Agent evaluation report">
+          <div className="panel__title panel__title--split">
+            <div>
+              <Gauge size={18} />
+              Agent evaluation report
+            </div>
+            <span>fixed eval suite</span>
           </div>
           <div className="metric-grid">
-            {metrics.map(([label, value]) => (
+            {displayedMetrics.map(([label, value]) => (
               <div className="metric" key={label}>
                 <strong>{value}</strong>
                 <span>{label}</span>
               </div>
             ))}
           </div>
+          {evalError && <span className="run-status__error">{evalError}</span>}
+          <div className="eval-grid">
+            {displayedEvalCases.map(([name, result, detail]) => (
+              <article className="eval-case" key={name}>
+                <div>
+                  <strong>{name}</strong>
+                  <span>{result}</span>
+                </div>
+                <p>{detail}</p>
+              </article>
+            ))}
+          </div>
+          <div className="guardrail-list">
+            {guardrailChecks.map(([label, detail]) => (
+              <div className="guardrail-item" key={label}>
+                <ShieldCheck size={17} />
+                <div>
+                  <strong>{label}</strong>
+                  <span>{detail}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="panel panel--wide">
-          <div className="panel__title">
-            <Database size={18} />
-            Knowledge base pipeline
+        <div className="panel panel--wide knowledge-console" aria-label="Knowledge RAG console">
+          <div className="panel__title panel__title--split">
+            <div>
+              <Database size={18} />
+              Knowledge RAG console
+            </div>
+            <span>grounded retrieval</span>
           </div>
-          <div className="knowledge-grid">
+          <div className="knowledge-search">
+            <label htmlFor="knowledge-query">Search company knowledge</label>
+            <div>
+              <input
+                id="knowledge-query"
+                onChange={(event) => setKnowledgeQuery(event.target.value)}
+                value={knowledgeQuery}
+              />
+              <button type="button" onClick={searchKnowledge} disabled={isSearchingKnowledge}>
+                <FileSearch size={16} />
+                {isSearchingKnowledge ? "Searching..." : "Search knowledge"}
+              </button>
+            </div>
+            {knowledgeError && <span className="run-status__error">{knowledgeError}</span>}
+          </div>
+          <div className="knowledge-grid knowledge-grid--compact">
             {knowledgeItems.map(([label, value]) => (
               <div className="knowledge-item" key={label}>
                 <span>{label}</span>
                 <strong>{value}</strong>
               </div>
             ))}
+          </div>
+          <div className="retrieval-results" aria-live="polite">
+            {knowledgeResults.length === 0 ? (
+              <article className="retrieval-empty">
+                <strong>Ready to retrieve cited evidence</strong>
+                <span>Search the seeded SSO policy to show how the KnowledgeAgent grounds customer answers.</span>
+              </article>
+            ) : (
+              knowledgeResults.map((result) => (
+                <article className="retrieval-card" key={result.id}>
+                  <div>
+                    <strong>{result.source}</strong>
+                    <span>chunk {result.chunk_index} · score {result.score}</span>
+                  </div>
+                  <p>{result.content}</p>
+                </article>
+              ))
+            )}
           </div>
         </div>
 
@@ -212,6 +376,40 @@ export function App() {
                 <strong>{value}</strong>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="panel panel--wide governance-panel" aria-label="Governance audit trail">
+          <div className="panel__title panel__title--split">
+            <div>
+              <ShieldCheck size={18} />
+              Governance audit trail
+            </div>
+            <span>policy evidence</span>
+          </div>
+          <div className="audit-table">
+            <div className="audit-table__head">
+              <span>agent</span>
+              <span>tool</span>
+              <span>mode</span>
+              <span>decision</span>
+            </div>
+            {auditRows.length === 0 ? (
+              <div className="audit-empty">
+                <SquareCheck size={18} />
+                <span>Run the sandbox workflow to record tool approvals and policy decisions.</span>
+              </div>
+            ) : (
+              auditRows.map((row) => (
+                <article className="audit-row" key={`${row.agent}-${row.tool}-${row.summary}`}>
+                  <strong>{row.agent}</strong>
+                  <span>{row.tool}</span>
+                  <span>{row.mode} · {row.execution}</span>
+                  <em>{row.decision}</em>
+                  <small>{row.summary}</small>
+                </article>
+              ))
+            )}
           </div>
         </div>
 

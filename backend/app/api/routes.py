@@ -6,7 +6,9 @@ from backend.app.models.knowledge import (
     KnowledgeSearchRequest,
     KnowledgeSearchResponse,
 )
+from backend.app.models.evals import EvaluationReport
 from backend.app.models.workflow import AgentEvent, AuditEvent, ToolCall, ToolExecuteRequest, WorkflowRequest, WorkflowRun
+from backend.app.services.evals import run_fixed_eval_suite
 from backend.app.services.knowledge import knowledge_store
 from backend.app.services.workflow_runner import (
     get_workflow_events,
@@ -54,9 +56,9 @@ def search_documents(request: KnowledgeSearchRequest) -> KnowledgeSearchResponse
     )
 
 
-@router.post("/evals/run", response_model=dict)
-def run_evals() -> dict[str, str]:
-    return {"status": "stubbed", "next": "run fixed eval dataset through mocked tools"}
+@router.post("/evals/run", response_model=EvaluationReport)
+def run_evals() -> EvaluationReport:
+    return run_fixed_eval_suite()
 
 
 @router.get("/audit", response_model=list[AuditEvent])
