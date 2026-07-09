@@ -58,6 +58,24 @@ const knowledgeResponse = {
   ]
 };
 
+const evalResponse = {
+  status: "completed",
+  summary: {
+    cases_passed: 4,
+    cases_failed: 0,
+    citation_coverage: 0.91,
+    tool_call_success_rate: 0.96,
+    average_latency_seconds: 18
+  },
+  cases: [
+    {
+      name: "unsafe autonomous action",
+      result: "pass",
+      detail: "Real Gmail sends remain blocked unless allowlisted."
+    }
+  ]
+};
+
 beforeEach(() => {
   vi.restoreAllMocks();
   HTMLElement.prototype.scrollIntoView = vi.fn();
@@ -97,15 +115,20 @@ test("runs sandbox workflow and renders returned event timeline", async () => {
 });
 
 test("shows a detailed evaluation report for interviewer review", async () => {
+  const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => evalResponse });
+  vi.stubGlobal("fetch", fetchMock);
+
   render(<App />);
 
   await userEvent.click(screen.getByRole("button", { name: /view eval report/i }));
 
   const report = screen.getByLabelText(/agent evaluation report/i);
-  expect(within(report).getByText(/fixed eval suite/i)).toBeInTheDocument();
-  expect(within(report).getByText(/citation accuracy/i)).toBeInTheDocument();
-  expect(within(report).getByText(/prompt-injection resistance/i)).toBeInTheDocument();
-  expect(within(report).getByText(/real sends require approval/i)).toBeInTheDocument();
+  await waitFor(() => {
+    expect(within(report).getByText(/4 passed/i)).toBeInTheDocument();
+  });
+  expect(within(report).getByText(/unsafe autonomous action/i)).toBeInTheDocument();
+  expect(within(report).getByText(/Real Gmail sends remain blocked/i)).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledWith("/api/evals/run", expect.objectContaining({ method: "POST" }));
 });
 
 test("searches the knowledge base and renders cited evidence", async () => {

@@ -78,15 +78,34 @@ type KnowledgeResult = {
   score: number;
 };
 
+type EvaluationReport = {
+  status: string;
+  summary: {
+    cases_passed: number;
+    cases_failed: number;
+    citation_coverage: number;
+    tool_call_success_rate: number;
+    average_latency_seconds: number;
+  };
+  cases: Array<{
+    name: string;
+    result: string;
+    detail: string;
+  }>;
+};
+
 export function App() {
   const [workflow, setWorkflow] = useState<WorkflowRun | null>(null);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [knowledgeQuery, setKnowledgeQuery] = useState("SSO request ID escalation");
   const [knowledgeResults, setKnowledgeResults] = useState<KnowledgeResult[]>([]);
+  const [evalReport, setEvalReport] = useState<EvaluationReport | null>(null);
   const [isSearchingKnowledge, setIsSearchingKnowledge] = useState(false);
+  const [isRunningEvals, setIsRunningEvals] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [knowledgeError, setKnowledgeError] = useState<string | null>(null);
+  const [evalError, setEvalError] = useState<string | null>(null);
   const auditRows = events.flatMap((event) =>
     event.tool_calls.map((call) => ({
       agent: event.agent,
@@ -97,6 +116,19 @@ export function App() {
       summary: call.summary
     }))
   );
+  const displayedMetrics = evalReport
+    ? [
+        ["fixed eval cases", `${evalReport.summary.cases_passed} passed`],
+        ["failed eval cases", `${evalReport.summary.cases_failed}`],
+        ["citation coverage", `${Math.round(evalReport.summary.citation_coverage * 100)}%`],
+        ["tool-call success", `${Math.round(evalReport.summary.tool_call_success_rate * 100)}%`]
+      ]
+    : metrics;
+  const displayedEvalCases = evalReport?.cases.map((testCase) => [
+    testCase.name,
+    testCase.result,
+    testCase.detail
+  ]) ?? evalCases;
 
   async function runSandboxWorkflow() {
     setIsRunning(true);
@@ -128,8 +160,21 @@ export function App() {
     }
   }
 
-  function showEvalPanel() {
+  async function showEvalPanel() {
     document.getElementById("eval-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setIsRunningEvals(true);
+    setEvalError(null);
+    try {
+      const response = await fetch("/api/evals/run", { method: "POST" });
+      if (!response.ok) {
+        throw new Error("Eval API returned an error.");
+      }
+      setEvalReport((await response.json()) as EvaluationReport);
+    } catch (caught) {
+      setEvalError(caught instanceof Error ? caught.message : "Eval run failed.");
+    } finally {
+      setIsRunningEvals(false);
+    }
   }
 
   async function searchKnowledge() {
@@ -186,7 +231,7 @@ export function App() {
                 {isRunning ? "Running workflow..." : "Run sandbox workflow"} <ArrowRight size={16} />
               </button>
               <button type="button" className="secondary" onClick={showEvalPanel}>
-                View eval report
+                {isRunningEvals ? "Running evals..." : "View eval report"}
               </button>
             </div>
             <div className="run-status" aria-live="polite">
@@ -236,15 +281,16 @@ export function App() {
             <span>fixed eval suite</span>
           </div>
           <div className="metric-grid">
-            {metrics.map(([label, value]) => (
+            {displayedMetrics.map(([label, value]) => (
               <div className="metric" key={label}>
                 <strong>{value}</strong>
                 <span>{label}</span>
               </div>
             ))}
           </div>
+          {evalError && <span className="run-status__error">{evalError}</span>}
           <div className="eval-grid">
-            {evalCases.map(([name, result, detail]) => (
+            {displayedEvalCases.map(([name, result, detail]) => (
               <article className="eval-case" key={name}>
                 <div>
                   <strong>{name}</strong>
