@@ -1,236 +1,348 @@
-import { useState } from "react";
-import { Activity, ArrowRight, Database, Gauge, ServerCog, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, ServerCog } from "lucide-react";
+import { requestJson } from "../api";
+import { AlertsPanel } from "../components/AlertsPanel";
+import { EvalsPanel } from "../components/EvalsPanel";
+import { EvidencePanel } from "../components/EvidencePanel";
+import { Timeline } from "../components/Timeline";
 import { WorkflowCanvas } from "../components/WorkflowCanvas";
+import type {
+  AgentEvent,
+  AutonomyMode,
+  Health,
+  Overview,
+  TowerView,
+  WorkflowRun,
+  WorkflowSource
+} from "../types";
 
-const metrics = [
-  ["tool-call success", "96%"],
-  ["avg workflow latency", "18s"],
-  ["citation coverage", "91%"],
-  ["sandbox tool calls", "live"]
+const VIEWS: Array<{ id: TowerView; label: string }> = [
+  { id: "tower", label: "Tower" },
+  { id: "run", label: "Workflow" },
+  { id: "agents", label: "Agents" },
+  { id: "evidence", label: "Evidence" },
+  { id: "alerts", label: "Alerts" },
+  { id: "audit", label: "Audit" },
+  { id: "evals", label: "Evals" },
+  { id: "readiness", label: "Readiness" }
 ];
 
-const proofPoints = ["LangGraph", "FastAPI", "pgvector", "Celery", "EKS/Terraform"];
-
-const tasks = [
-  ["urgent", "SSO failure from enterprise trial", "TicketTriageAgent"],
-  ["high", "Draft pricing follow-up for Acme AI", "OutreachAgent"],
-  ["medium", "Create stale-doc issue for onboarding guide", "EngineeringHandoffAgent"]
-];
-
-const knowledgeItems = [
-  ["seeded doc", "security-sso.md"],
-  ["chunking", "700 chars + overlap"],
-  ["retrieval", "keyword baseline"],
-  ["agent tool", "MCP retrieve_docs"]
-];
-
-const toolItems = [
-  ["Gmail", "sandbox draft"],
-  ["Slack", "demo-alerts post"],
-  ["GitHub", "allowlisted issue"],
-  ["Safety", "real mode blocked"]
-];
-
-const timelineEvents = [
-  "SupervisorAgent planned specialist steps",
-  "KnowledgeAgent retrieved grounded evidence",
-  "TicketTriageAgent classified urgency",
-  "RiskGuardAgent checked safety policy",
-  "OutreachAgent prepared Gmail action"
-];
-
-type WorkflowRun = {
-  workflow_id: string;
-  status: string;
-};
-
-type AgentEvent = {
-  sequence: number;
-  agent: string;
-  message: string;
-  tools: string[];
-  tool_calls: Array<{
-    tool_name: string;
-    execution_mode: string;
-    summary: string;
-  }>;
-};
+const DEFAULT_OBJECTIVE =
+  "Customer says SSO fails before security review. Answer from docs and escalate if needed.";
 
 export function App() {
+  const [view, setView] = useState<TowerView>("tower");
+  const [health, setHealth] = useState<Health | null>(null);
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [objective, setObjective] = useState(DEFAULT_OBJECTIVE);
+  const [account, setAccount] = useState("Acme AI");
+  const [source, setSource] = useState<WorkflowSource>("gmail");
+  const [autonomy, setAutonomy] = useState<AutonomyMode>("sandbox");
   const [workflow, setWorkflow] = useState<WorkflowRun | null>(null);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
+
+  async function loadTower() {
+    try {
+      const [healthBody, overviewBody] = await Promise.all([
+        requestJson<Health>("/health"),
+        requestJson<Overview>("/api/overview")
+      ]);
+      setHealth(healthBody);
+      setOverview(overviewBody);
+      setLoadError(null);
+    } catch (caught) {
+      setLoadError(caught instanceof Error ? caught.message : "Control tower API is unreachable.");
+    }
+  }
+
+  useEffect(() => {
+    void loadTower();
+  }, []);
 
   async function runSandboxWorkflow() {
     setIsRunning(true);
-    setError(null);
+    setRunError(null);
+    setView("run");
     try {
-      const runResponse = await fetch("/api/workflows/run", {
+      const run = await requestJson<WorkflowRun>("/api/workflows/run", {
         method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          objective: "Customer says SSO fails before security review. Answer from docs and escalate if needed.",
-          source: "gmail",
-          autonomy_mode: "sandbox"
+          objective,
+          source,
+          autonomy_mode: autonomy,
+          account
         })
       });
-      if (!runResponse.ok) {
-        throw new Error("Workflow API returned an error.");
-      }
-      const run = (await runResponse.json()) as WorkflowRun;
-      const eventsResponse = await fetch(`/api/workflows/${run.workflow_id}/events`);
-      if (!eventsResponse.ok) {
-        throw new Error("Workflow events API returned an error.");
-      }
+      const timeline = await requestJson<AgentEvent[]>(`/api/workflows/${run.workflow_id}/events`);
       setWorkflow(run);
-      setEvents((await eventsResponse.json()) as AgentEvent[]);
+      setEvents(timeline);
+      await loadTower();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Workflow failed.");
+      setRunError(caught instanceof Error ? caught.message : "Workflow failed.");
     } finally {
       setIsRunning(false);
     }
   }
 
-  function showEvalPanel() {
-    document.getElementById("eval-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  async function acknowledge(alertId: string) {
+    try {
+      await requestJson(`/api/alerts/${alertId}/acknowledge`, { method: "POST" });
+      await loadTower();
+    } catch (caught) {
+      setLoadError(caught instanceof Error ? caught.message : "Could not acknowledge the alert.");
+    }
   }
 
+  const visibleEvents = events.length > 0 ? events : (overview?.latest_events ?? []);
+  const activeAgents = visibleEvents.map((event) => event.agent);
+  const runLabel =
+    autonomy === "sandbox" ? "Run sandbox workflow" : autonomy === "approval" ? "Run approval workflow" : "Run real-mode check";
+
   return (
-    <main>
-      <section className="hero">
-        <nav className="nav">
-          <div className="brand">
-            <ServerCog size={20} />
-            RevenueOps Control Tower
+    <div className="tower">
+      <aside className="rail">
+        <div className="brand">
+          <ServerCog size={20} />
+          <div>
+            <strong>RevenueOps</strong>
+            <small>Control Tower</small>
           </div>
-          <div className="nav__status">
-            <span />
-            enterprise scaffold
-          </div>
+        </div>
+        <nav className="rail__nav" aria-label="Control tower sections">
+          {VIEWS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={view === item.id ? "nav-button nav-button--active" : "nav-button"}
+              aria-current={view === item.id ? "page" : undefined}
+              onClick={() => setView(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
         </nav>
+        <p className="rail__badge">{overview?.recommended_badge ?? "…"} demo</p>
+      </aside>
 
-        <div className="hero__grid">
-          <div className="hero__copy">
-            <p className="eyebrow">multi-agent AI platform for startup operators</p>
-            <h1>Revenue and support ops, run by governed AI agents.</h1>
+      <div className="workspace">
+        <header className="masthead">
+          <div>
+            <p className="eyebrow">Founder and COO operator console</p>
+            <h1>Revenue and support, under one governed tower.</h1>
             <p className="lede">
-              Research leads, answer customer questions from company knowledge, triage tickets, send
-              Gmail updates, escalate to Slack, and create GitHub issues with audit trails, evals, and
-              deployment proof.
+              Specialist agents research accounts, cite company docs, triage urgency, and prepare Gmail,
+              Slack, and GitHub actions. Sandbox is the default. Nothing is sent.
             </p>
-            <div className="proof-strip" aria-label="Technology proof points">
-              {proofPoints.map((point) => (
-                <span key={point}>{point}</span>
-              ))}
+          </div>
+          <div className="masthead__actions">
+            <button type="button" className="primary" onClick={() => void runSandboxWorkflow()} disabled={isRunning}>
+              {isRunning ? "Running workflow..." : runLabel} <ArrowRight size={16} />
+            </button>
+            <button type="button" className="secondary" onClick={() => setView("evals")}>
+              View eval report
+            </button>
+            <div className="status-row" aria-live="polite">
+              <span className={health?.status === "ok" ? "pill pill--ok" : "pill"}>
+                {health ? `${health.product} · ${health.status}` : "API not checked"}
+              </span>
+              <span className="pill">{autonomy}</span>
+              {workflow && (
+                <span>
+                  Workflow {workflow.workflow_id} {workflow.status}
+                </span>
+              )}
+              {runError && <span className="run-status__error">{runError}</span>}
             </div>
-            <div className="actions">
-              <button type="button" onClick={runSandboxWorkflow} disabled={isRunning}>
-                {isRunning ? "Running workflow..." : "Run sandbox workflow"} <ArrowRight size={16} />
-              </button>
-              <button type="button" className="secondary" onClick={showEvalPanel}>
-                View eval report
-              </button>
-            </div>
-            <div className="run-status" aria-live="polite">
-              {workflow && <span>Workflow {workflow.workflow_id} {workflow.status}</span>}
-              {error && <span className="run-status__error">{error}</span>}
-            </div>
           </div>
-          <WorkflowCanvas />
-        </div>
-      </section>
+        </header>
 
-      <section className="dashboard">
-        <div className="panel">
-          <div className="panel__title">
-            <Activity size={18} />
-            Live agent timeline
-          </div>
-          {events.length === 0
-            ? timelineEvents.map((event) => (
-                <div className="timeline-row" key={event}>
-                  <span />
-                  {event}
-                </div>
-              ))
-            : events.map((event) => (
-                <div className="timeline-row timeline-row--rich" key={`${event.sequence}-${event.agent}`}>
-                  <span />
-                  <div>
-                    <strong>{event.agent}</strong>
-                    <small>{event.message}</small>
-                    {event.tool_calls.map((call) => (
-                      <em key={`${event.sequence}-${call.tool_name}`}>
-                        {call.tool_name} · {call.execution_mode} · {call.summary}
-                      </em>
-                    ))}
-                  </div>
-                </div>
-              ))}
-        </div>
+        {loadError && (
+          <p className="banner" role="alert">
+            {loadError} Start the tower with <code>bash scripts/serve.sh</code> and open port 8060.
+          </p>
+        )}
 
-        <div className="panel" id="eval-panel">
-          <div className="panel__title">
-            <Gauge size={18} />
-            Evaluation gates
-          </div>
-          <div className="metric-grid">
-            {metrics.map(([label, value]) => (
-              <div className="metric" key={label}>
-                <strong>{value}</strong>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="panel panel--wide">
-          <div className="panel__title">
-            <Database size={18} />
-            Knowledge base pipeline
-          </div>
-          <div className="knowledge-grid">
-            {knowledgeItems.map(([label, value]) => (
-              <div className="knowledge-item" key={label}>
-                <span>{label}</span>
-                <strong>{value}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="panel panel--wide">
-          <div className="panel__title">
-            <ShieldCheck size={18} />
-            Sandbox tool execution
-          </div>
-          <div className="knowledge-grid">
-            {toolItems.map(([label, value]) => (
-              <div className="knowledge-item" key={label}>
-                <span>{label}</span>
-                <strong>{value}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="panel panel--wide">
-          <div className="panel__title">
-            <ShieldCheck size={18} />
-            Operator task board
-          </div>
-          <div className="kanban">
-            {tasks.map(([priority, title, owner]) => (
-              <article className="task-card" key={title}>
-                <span>{priority}</span>
-                <strong>{title}</strong>
-                <small>{owner}</small>
+        {overview && (
+          <section className="kpi-grid" aria-label="Control tower KPIs">
+            {overview.kpis.map((kpi) => (
+              <article className="kpi" key={kpi.id}>
+                <strong>{kpi.value}</strong>
+                <span>{kpi.label}</span>
+                <small>{kpi.detail}</small>
               </article>
             ))}
-          </div>
-        </div>
-      </section>
-    </main>
+          </section>
+        )}
+
+        <main className="stage">
+          {view === "tower" && (
+            <div className="stage-grid">
+              <section className="panel">
+                <div className="panel__title">Open queue</div>
+                <AlertsPanel
+                  alerts={(overview?.alerts ?? []).filter((alert) => alert.status === "open").slice(0, 4)}
+                  onAcknowledge={acknowledge}
+                />
+              </section>
+              <section className="panel">
+                <div className="panel__title">Latest workflow evidence</div>
+                <Timeline events={visibleEvents} />
+              </section>
+              <section className="panel panel--wide">
+                <div className="panel__title">Book of business</div>
+                <div className="account-grid">
+                  {(overview?.accounts ?? []).map((account) => (
+                    <article className="account-card" key={account.company}>
+                      <header>
+                        <strong>{account.company}</strong>
+                        <span>fit {account.fit_score}</span>
+                      </header>
+                      <p>{account.segment} · {account.team_size} people · {account.plan || "plan unset"}</p>
+                      <small>{account.signal}</small>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {view === "run" && (
+            <div className="stage-grid stage-grid--run">
+              <section className="panel">
+                <div className="panel__title">Demo scenarios</div>
+                <div className="stack">
+                  {(overview?.scenarios ?? []).map((scenario) => (
+                    <button
+                      key={scenario.id}
+                      type="button"
+                      className={objective === scenario.objective ? "scenario scenario--active" : "scenario"}
+                      onClick={() => {
+                        setObjective(scenario.objective);
+                        setSource(scenario.source);
+                        setAccount(scenario.account);
+                      }}
+                    >
+                      <strong>{scenario.title}</strong>
+                      <small>{scenario.account} · {scenario.source}</small>
+                      <span>{scenario.summary}</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="field" htmlFor="objective">
+                  Objective
+                  <textarea id="objective" value={objective} onChange={(event) => setObjective(event.target.value)} rows={4} />
+                </label>
+                <div className="field-row">
+                  <label>
+                    Source
+                    <select value={source} onChange={(event) => setSource(event.target.value as WorkflowSource)}>
+                      <option value="gmail">gmail</option>
+                      <option value="manual">manual</option>
+                      <option value="github">github</option>
+                      <option value="slack">slack</option>
+                    </select>
+                  </label>
+                  <label>
+                    Autonomy
+                    <select value={autonomy} onChange={(event) => setAutonomy(event.target.value as AutonomyMode)}>
+                      <option value="sandbox">sandbox</option>
+                      <option value="approval">approval</option>
+                      <option value="real">real</option>
+                    </select>
+                  </label>
+                </div>
+              </section>
+              <section className="panel">
+                <div className="panel__title">Agent timeline</div>
+                <Timeline events={visibleEvents} />
+              </section>
+              <div className="panel--wide">
+                <WorkflowCanvas
+                  autonomyMode={autonomy}
+                  activeAgents={activeAgents}
+                  workflowId={workflow?.workflow_id}
+                />
+              </div>
+            </div>
+          )}
+
+          {view === "agents" && (
+            <div className="agent-board">
+              {(overview?.agents ?? []).map((agent) => (
+                <article className="agent-board__card" key={agent.name}>
+                  <header>
+                    <strong>{agent.name}</strong>
+                    <span>{agent.status}</span>
+                  </header>
+                  <p>{agent.role}</p>
+                  <small>{agent.tools.length ? agent.tools.join(", ") : "No external tool"}</small>
+                  <em>{agent.last_message}</em>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {view === "evidence" && <EvidencePanel documents={overview?.documents ?? []} />}
+          {view === "alerts" && <AlertsPanel alerts={overview?.alerts ?? []} onAcknowledge={acknowledge} />}
+
+          {view === "audit" && (
+            <div className="panel">
+              <div className="panel__title">Audit trail</div>
+              <div className="audit-list">
+                {(overview?.audit_events ?? []).map((event, index) => (
+                  <article key={`${event.created_at ?? "audit"}-${index}`}>
+                    <span>{event.event_type}</span>
+                    <p>{event.message}</p>
+                    <small>{event.workflow_id || "system"} · {event.created_at || "unspecified time"}</small>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {view === "evals" && <EvalsPanel />}
+
+          {view === "readiness" && overview && (
+            <section className="panel">
+              <div className="panel__title">Studio readiness · {overview.readiness.recommended_badge}</div>
+              <p className="lede lede--compact">{overview.readiness.summary}</p>
+              <p className="positioning">{overview.positioning}</p>
+              <div className="readiness-grid">
+                <div>
+                  <h2>Live</h2>
+                  <ul>
+                    {overview.readiness.live.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h2>Early</h2>
+                  <ul>
+                    {overview.readiness.early.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h2>Building</h2>
+                  <ul>
+                    {overview.readiness.building.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
+          )}
+        </main>
+        <footer className="footnote">
+          Sandbox demo for this repository. External sends stay simulated. This host is not Agent Fleet.
+        </footer>
+      </div>
+    </div>
   );
 }

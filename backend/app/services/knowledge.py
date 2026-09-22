@@ -1,12 +1,13 @@
 import re
 from collections import Counter
-from pathlib import Path
 
+from backend.app.core.paths import repo_root
 from backend.app.models.knowledge import (
     DocumentChunk,
     DocumentUploadRequest,
     KnowledgeSearchResult,
 )
+from backend.app.models.tower import DocumentRecord
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
@@ -66,32 +67,57 @@ class KnowledgeStore:
         if not query_counts:
             return []
 
-        scored: list[KnowledgeSearchResult] = []
+        scored: list[tuple[KnowledgeSearchResult, int]] = []
         for chunk in self._chunks:
             chunk_counts = Counter(_tokens(chunk.content))
             overlap_score = sum(min(count, chunk_counts[token]) for token, count in query_counts.items())
             if overlap_score == 0:
                 continue
+            frequency = sum(chunk_counts[token] for token in query_counts)
             scored.append(
-                KnowledgeSearchResult(
-                    **chunk.model_dump(),
-                    score=round(overlap_score / max(len(query_counts), 1), 3),
+                (
+                    KnowledgeSearchResult(
+                        **chunk.model_dump(),
+                        score=round(overlap_score / max(len(query_counts), 1), 3),
+                    ),
+                    frequency,
                 )
             )
 
-        return sorted(scored, key=lambda result: result.score, reverse=True)[:limit]
+        scored.sort(key=lambda item: (item[0].score, item[1]), reverse=True)
+        return [item[0] for item in scored[:limit]]
+
+    def list_documents(self) -> list[DocumentRecord]:
+        grouped: dict[str, list[DocumentChunk]] = {}
+        for chunk in self._chunks:
+            grouped.setdefault(chunk.source, []).append(chunk)
+        records: list[DocumentRecord] = []
+        for source, chunks in sorted(grouped.items()):
+            preview = chunks[0].content[:220]
+            records.append(DocumentRecord(source=source, chunks=len(chunks), preview=preview))
+        return records
+
+    @property
+    def chunk_count(self) -> int:
+        return len(self._chunks)
 
 
 knowledge_store = KnowledgeStore()
+_SEEDED = False
 
 
 def seed_knowledge_store() -> None:
-    if knowledge_store.search("SSO", limit=1):
+    global _SEEDED
+    if _SEEDED:
         return
 
-    sample_path = Path(__file__).resolve().parents[3] / "sample-data" / "documents" / "security-sso.md"
-    if sample_path.exists():
-        knowledge_store.ingest(DocumentUploadRequest(source=sample_path.name, text=sample_path.read_text()))
+    sample_dir = repo_root() / "sample-data" / "documents"
+    paths = sorted(sample_dir.glob("*.md")) if sample_dir.exists() else []
+    for path in paths:
+        knowledge_store.ingest(
+            DocumentUploadRequest(source=path.name, text=path.read_text(encoding="utf-8"))
+        )
+    _SEEDED = True
 
 
 seed_knowledge_store()

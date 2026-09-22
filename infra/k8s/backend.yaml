@@ -17,14 +17,14 @@ spec:
         - name: backend
           image: ghcr.io/your-org/revenueops-backend:latest
           ports:
-            - containerPort: 8000
+            - containerPort: 8060
           envFrom:
             - secretRef:
                 name: revenueops-secrets
           readinessProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8060
             initialDelaySeconds: 5
             periodSeconds: 10
 ---
@@ -37,6 +37,6 @@ spec:
   selector:
     app: revenueops-backend
   ports:
-    - port: 8000
-      targetPort: 8000
+    - port: 8060
+      targetPort: 8060
 

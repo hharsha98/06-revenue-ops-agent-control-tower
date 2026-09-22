@@ -10,7 +10,12 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 
 COPY backend backend
 COPY mcp_server mcp_server
+COPY sample-data sample-data
+COPY evals evals
 
-EXPOSE 8000
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV HOST=0.0.0.0
+ENV PORT=8060
+
+EXPOSE 8060
+CMD ["python", "-m", "backend.app"]
 

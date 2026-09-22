@@ -2,7 +2,8 @@
   "company": "Acme AI",
   "segment": "B2B SaaS",
   "team_size": 42,
-  "signal": "Evaluating AI support automation before a seed extension",
+  "plan": "enterprise-trial",
+  "signal": "Evaluating AI support automation before a seed extension. Security questionnaire is tomorrow.",
   "fit_score_hint": 86
 }
 
