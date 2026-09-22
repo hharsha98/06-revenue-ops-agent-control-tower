@@ -1,5 +1,16 @@
 # Implementation Roadmap
 
+## Status against this roadmap
+
+| Phase | Label | Notes |
+|---|---|---|
+| 0 Scaffold | Live | API, UI, tests, Compose, CI |
+| 1 Ingestion | Early | Upload, chunk, and search work in memory. pgvector is not the runtime |
+| 2 Agent graph | Early | LangGraph supervisor plus one worker node. Not a separate node per agent |
+| 3 Live tools | Early | Sandbox drafts and allowlists. No live OAuth |
+| 4 Evals | Live | Fixed 3-case routing suite shown in the UI |
+| 5 Enterprise deploy | Building | Compose optional. Kubernetes and Terraform are not applied |
+
 ## Phase 0: Scaffold
 
 - Create backend, frontend, docs, sample data, Docker, Kubernetes, Terraform, and CI skeleton.

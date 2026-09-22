@@ -1,6 +1,7 @@
 from fastmcp import FastMCP
 
 from backend.app.services.knowledge import knowledge_store
+from backend.app.services.triage import classify_ticket
 
 mcp = FastMCP("revenueops-agent-tools")
 
@@ -20,8 +21,13 @@ def retrieve_docs_tool(query: str) -> str:
 
 @mcp.tool
 def triage_ticket(ticket: str) -> str:
-    """Classify support ticket urgency. Scaffold returns a deterministic placeholder."""
-    return f"triaged ticket: {ticket}"
+    """Classify support ticket urgency, topic, and owner from the ticket text."""
+    classification = classify_ticket(ticket)
+    return (
+        f"urgency={classification['urgency']} "
+        f"topic={classification['topic']} "
+        f"owner={classification['owner']}"
+    )
 
 
 if __name__ == "__main__":

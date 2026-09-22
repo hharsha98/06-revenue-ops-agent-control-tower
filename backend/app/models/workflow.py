@@ -11,6 +11,7 @@ class WorkflowRequest(BaseModel):
     objective: str = Field(min_length=5)
     source: Literal["gmail", "slack", "github", "manual"] = "manual"
     autonomy_mode: AutonomyMode = "sandbox"
+    account: str = ""
 
 
 class AgentStep(BaseModel):
@@ -31,6 +32,8 @@ class WorkflowRun(BaseModel):
     workflow_id: str
     status: Literal["planned", "running", "blocked", "completed"] = "planned"
     plan: WorkflowPlan
+    objective: str = ""
+    autonomy_mode: AutonomyMode = "sandbox"
 
 
 class ToolCall(BaseModel):
@@ -40,6 +43,7 @@ class ToolCall(BaseModel):
     allowed: bool
     execution_mode: Literal["simulated", "approval_required", "live_blocked", "live"]
     summary: str
+    details: dict[str, str] = Field(default_factory=dict)
 
 
 class ToolExecuteRequest(BaseModel):
@@ -67,3 +71,4 @@ class AuditEvent(BaseModel):
     event_type: str
     message: str
     workflow_id: str | None = None
+    created_at: str | None = None

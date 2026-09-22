@@ -11,25 +11,33 @@ import {
 } from "lucide-react";
 
 const agents = [
-  { name: "Research", icon: Bot, status: "account context", signal: "lead fit 86%" },
-  { name: "Knowledge", icon: Database, status: "RAG citations", signal: "3 sources" },
-  { name: "Ticket Triage", icon: Bot, status: "urgency + owner", signal: "high priority" },
-  { name: "Risk Guard", icon: ShieldCheck, status: "policy gate", signal: "safe to draft" }
+  { id: "ResearchAgent", name: "Research", icon: Bot, status: "account context" },
+  { id: "KnowledgeAgent", name: "Knowledge", icon: Database, status: "citations" },
+  { id: "TicketTriageAgent", name: "Ticket Triage", icon: Bot, status: "urgency + Slack" },
+  { id: "RiskGuardAgent", name: "Risk Guard", icon: ShieldCheck, status: "policy gate" },
+  { id: "OutreachAgent", name: "Outreach", icon: Mail, status: "draft only" },
+  { id: "EngineeringHandoffAgent", name: "Handoff", icon: Github, status: "sandbox issue" }
 ];
 
 const tools = [
-  { name: "Gmail", icon: Mail, label: "read/send" },
-  { name: "Slack", icon: MessageSquare, label: "handoff" },
-  { name: "GitHub", icon: Github, label: "issues" },
-  { name: "Eval", icon: CheckCircle2, label: "quality gate" }
+  { name: "Gmail", icon: Mail, label: "draft" },
+  { name: "Slack", icon: MessageSquare, label: "sandbox" },
+  { name: "GitHub", icon: Github, label: "sandbox" },
+  { name: "Eval", icon: CheckCircle2, label: "dataset" }
 ];
 
-export function WorkflowCanvas() {
+type WorkflowCanvasProps = {
+  autonomyMode: string;
+  activeAgents: string[];
+  workflowId?: string | null;
+};
+
+export function WorkflowCanvas({ autonomyMode, activeAgents, workflowId }: WorkflowCanvasProps) {
   return (
     <section className="canvas" aria-label="Workflow canvas">
       <div className="canvas__header">
-        <span>Workflow control plane</span>
-        <strong>Sandbox autonomy</strong>
+        <span>{workflowId ? workflowId : "Workflow control plane"}</span>
+        <strong>{autonomyMode} autonomy</strong>
       </div>
       <div className="canvas__body">
         <div className="supervisor-card">
@@ -37,20 +45,19 @@ export function WorkflowCanvas() {
             <BrainCircuit size={22} />
             <span>SupervisorAgent</span>
           </div>
-          <strong>Plans, delegates, checks risk, then approves tool execution.</strong>
+          <strong>Plans, delegates, checks risk, then records every tool call.</strong>
         </div>
-
         <div className="flow-strip" aria-label="Workflow stages">
           {["intake", "plan", "delegate", "verify", "act"].map((stage) => (
             <span key={stage}>{stage}</span>
           ))}
         </div>
-
         <div className="agent-grid">
           {agents.map((agent) => {
             const Icon = agent.icon;
+            const active = activeAgents.includes(agent.id);
             return (
-              <article className="agent-card" key={agent.name}>
+              <article className={active ? "agent-card agent-card--active" : "agent-card"} key={agent.id}>
                 <div className="agent-card__icon">
                   <Icon size={17} />
                 </div>
@@ -58,12 +65,11 @@ export function WorkflowCanvas() {
                   <strong>{agent.name}</strong>
                   <span>{agent.status}</span>
                 </div>
-                <small>{agent.signal}</small>
+                <small>{active ? "ran" : "ready"}</small>
               </article>
             );
           })}
         </div>
-
         <div className="gate-row">
           <div className="gate-card">
             <ShieldCheck size={18} />
@@ -71,7 +77,7 @@ export function WorkflowCanvas() {
           </div>
           <div className="gate-card">
             <Sparkles size={18} />
-            <span>LLM eval gate</span>
+            <span>Citation check</span>
           </div>
         </div>
       </div>

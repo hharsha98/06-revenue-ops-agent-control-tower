@@ -1,0 +1,42 @@
+[
+  {
+    "id": "alert_sso_acme",
+    "severity": "critical",
+    "title": "Acme AI SSO failing before security review",
+    "detail": "Enterprise trial reports an identity-provider redirect failure. The security questionnaire is tomorrow.",
+    "account": "Acme AI",
+    "owner_agent": "TicketTriageAgent",
+    "status": "open",
+    "source": "seed"
+  },
+  {
+    "id": "alert_pricing_helix",
+    "severity": "high",
+    "title": "Helix Analytics pricing follow-up is due",
+    "detail": "Starter-plan champion asked which tier includes audit history. No discount has been approved.",
+    "account": "Helix Analytics",
+    "owner_agent": "OutreachAgent",
+    "status": "open",
+    "source": "seed"
+  },
+  {
+    "id": "alert_onboarding_northline",
+    "severity": "medium",
+    "title": "Northline onboarding screenshots are stale",
+    "detail": "The invite guide still shows the old workspace switcher. Engineering handoff is the right next step.",
+    "account": "Northline Health",
+    "owner_agent": "EngineeringHandoffAgent",
+    "status": "open",
+    "source": "seed"
+  },
+  {
+    "id": "alert_sla_watch",
+    "severity": "low",
+    "title": "Enterprise-trial first response is inside four hours",
+    "detail": "No breached SLA in the seeded book. Sandbox drafts do not close the customer commitment.",
+    "account": "Acme AI",
+    "owner_agent": "SupervisorAgent",
+    "status": "acknowledged",
+    "source": "seed"
+  }
+]

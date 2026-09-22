@@ -5,16 +5,33 @@
 Build an enterprise-style control tower where one supervisor agent coordinates specialist
 agents that use real business tools while preserving auditability, evals, and safe defaults.
 
-## Runtime pieces
+## What runs in the native demo
 
-- React dashboard: operator UI, workflow canvas, timeline, Kanban, evals, observability.
-- FastAPI backend: workflow API, audit API, document ingestion API, eval trigger API.
+- React operator console, served by FastAPI from `frontend/dist` on port 8060.
+- FastAPI read model for KPIs, alerts, accounts, documents, workflows, audit, and evals.
+- LangGraph graph with a supervisor node and a worker node. The worker executes the
+  planned specialist steps in order and records tool calls.
+- In-memory document store with keyword overlap and citations. Seeded from `sample-data/documents`.
+- Sandbox adapters for Gmail, Slack, and GitHub. Real mode fails closed.
+- Fixed eval dataset in `evals/dataset.jsonl`.
+
+## Present in the repo, not on the demo path
+
+- Postgres + pgvector schema and optional Compose services. The API does not embed or query them.
+- Redis + Celery health task. Workflows run in-process.
+- LiteLLM settings. The demo does not call a model.
+- Langfuse, Prometheus, and Grafana are not wired.
+- Kubernetes and Terraform files are skeletons. They are not applied.
+
+## Runtime pieces the product is aimed at
+
+- React dashboard: operator UI, workflow canvas, timeline, alerts, evals.
+- FastAPI backend: workflow API, audit API, document ingestion API, eval API.
 - LangGraph agent layer: supervisor routes to specialist agents.
-- FastMCP server: exposes tool contracts for agent-to-tool usage.
-- Postgres + pgvector: business records and document embeddings.
-- Redis + Celery: background ingestion, tool execution, evals, and long-running workflows.
-- LiteLLM: one model gateway for Gemini, OpenAI, Anthropic, Mistral, or OpenAI-compatible models.
-- Observability: Langfuse for LLM traces, OpenTelemetry/Prometheus/Grafana for service metrics.
+- FastMCP server: retrieve and triage over the same in-memory store.
+- Postgres + pgvector: intended store for business records and embeddings.
+- Redis + Celery: intended background workers.
+- LiteLLM: intended model gateway. Not used by the sandbox demo.
 
 ## Agent responsibilities
 
@@ -31,8 +48,9 @@ agents that use real business tools while preserving auditability, evals, and sa
 ## Safety model
 
 - `sandbox`: tools simulate external actions.
-- `approval`: tools draft actions but require human approval.
-- `real`: tools may execute only when target allowlists match.
+- `approval`: external tools stop at a checkpoint and are not sent.
+- `real`: allowlists are checked, then Gmail, Slack, and GitHub fail closed.
+  This build does not ship live credentials, so a passing allowlist still sends nothing.
 
 Default mode is `sandbox`.
 

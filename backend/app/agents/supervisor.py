@@ -23,12 +23,14 @@ def build_startup_revenue_plan(request: WorkflowRequest) -> WorkflowPlan:
             )
         )
 
-    if any(keyword in objective for keyword in ["ticket", "support", "issue", "failing", "fails", "bug", "escalate"]):
+    # "issue" is reserved for engineering handoff. Support triage uses ticket language
+    # so a stale-doc request does not also open a customer-support escalation.
+    if any(keyword in objective for keyword in ["ticket", "support", "failing", "fails", "bug", "escalate"]):
         steps.append(
             AgentStep(
                 agent="TicketTriageAgent",
                 purpose="Classify urgency, owner, customer impact, and escalation path.",
-                tools=["triage_ticket"],
+                tools=["triage_ticket", "post_slack"],
             )
         )
 
